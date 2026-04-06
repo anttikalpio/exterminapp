@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import {
   LayoutDashboard,
   Users,
@@ -14,6 +13,7 @@ import {
   FileText,
   Settings,
   LogOut,
+  Bug,
 } from "lucide-react";
 
 const navItems = [
@@ -31,14 +31,9 @@ export function AdminSidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
-      <div className="flex items-center justify-center border-b border-gray-200 px-4 py-4">
-        <Image
-          src="/logo.svg"
-          alt="Express Torjunta"
-          width={200}
-          height={48}
-          priority
-        />
+      <div className="flex items-center gap-2 border-b border-gray-200 px-6 py-4">
+        <Bug className="h-6 w-6 text-green-600" />
+        <span className="text-lg font-bold text-gray-900">ExterminApp</span>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
