@@ -36,3 +36,6 @@ Thumbs.db
 
 # Database
 pgdata/
+
+# Uploads
+apps/web/public/uploads/

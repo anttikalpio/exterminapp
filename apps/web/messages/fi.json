@@ -129,5 +129,21 @@
     "performedAt": "P\u00e4iv\u00e4m\u00e4\u00e4r\u00e4",
     "noPoisonHistory": "Ei myrkytyksi\u00e4 kirjattu",
     "clickMapToPlace": "Napsauta karttaa sijoittaaksesi ansan"
+  },
+  "settings": {
+    "title": "Yrityksen asetukset",
+    "companyDetails": "Yrityksen tiedot",
+    "companyName": "Yrityksen nimi",
+    "address": "Osoite",
+    "vatNumber": "Y-tunnus",
+    "contactEmail": "S\u00e4hk\u00f6posti",
+    "contactPhone": "Puhelin",
+    "logo": "Yrityksen logo",
+    "uploadLogo": "Lataa logo",
+    "removeLogo": "Poista logo",
+    "logoHelp": "PNG tai JPG, max 2MB",
+    "saved": "Asetukset tallennettu",
+    "logoUploaded": "Logo ladattu onnistuneesti",
+    "logoRemoved": "Logo poistettu"
   }
 }

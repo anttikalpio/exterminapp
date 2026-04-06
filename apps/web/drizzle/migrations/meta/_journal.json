@@ -15,6 +15,13 @@
       "when": 1775512630527,
       "tag": "0001_nice_magneto",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775514066476,
+      "tag": "0002_flawless_deadpool",
+      "breakpoints": true
     }
   ]
 }

@@ -128,5 +128,21 @@
     "performedAt": "Date",
     "noPoisonHistory": "No poison additions recorded",
     "clickMapToPlace": "Click on the map to place the trap"
+  },
+  "settings": {
+    "title": "Company Settings",
+    "companyDetails": "Company Details",
+    "companyName": "Company Name",
+    "address": "Address",
+    "vatNumber": "VAT Number",
+    "contactEmail": "Contact Email",
+    "contactPhone": "Contact Phone",
+    "logo": "Company Logo",
+    "uploadLogo": "Upload Logo",
+    "removeLogo": "Remove Logo",
+    "logoHelp": "PNG or JPG, max 2MB",
+    "saved": "Settings saved successfully",
+    "logoUploaded": "Logo uploaded successfully",
+    "logoRemoved": "Logo removed"
   }
 }
