@@ -36,14 +36,37 @@ export default function TrapDetailPage({
     data: poisonHistory,
     refetch: refetchHistory,
   } = trpc.trap.poisonHistory.useQuery({ trapId });
+  const { data: lastAddition, refetch: refetchLast } =
+    trpc.trap.lastPoisonAddition.useQuery({ trapId });
 
   const addPoisonMutation = trpc.trap.addPoison.useMutation({
     onSuccess: () => {
       refetchHistory();
+      refetchLast();
       setShowPoisonForm(false);
       setPoisonForm({ poisonType: POISON_TYPES[0], remainingGrams: "", quantityGrams: "", notes: "" });
     },
   });
+
+  const openPoisonForm = () => {
+    // Pre-fill with defaults from last addition
+    const defaultRemaining =
+      lastAddition?.remainingGrams && lastAddition?.quantityGrams
+        ? (
+            parseFloat(lastAddition.remainingGrams) +
+            parseFloat(lastAddition.quantityGrams)
+          ).toFixed(2)
+        : "";
+    const defaultPoisonType = lastAddition?.poisonType ?? (POISON_TYPES[0] as string);
+
+    setPoisonForm({
+      poisonType: defaultPoisonType,
+      remainingGrams: defaultRemaining,
+      quantityGrams: "",
+      notes: "",
+    });
+    setShowPoisonForm(true);
+  };
 
   const updateStatusMutation = trpc.trap.update.useMutation({
     onSuccess: () => {
@@ -199,7 +222,7 @@ export default function TrapDetailPage({
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
             <h2 className="font-medium text-gray-900">{t("poisonHistory")}</h2>
             <button
-              onClick={() => setShowPoisonForm(!showPoisonForm)}
+              onClick={() => (showPoisonForm ? setShowPoisonForm(false) : openPoisonForm())}
               className="flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
             >
               <Plus className="h-3 w-3" />

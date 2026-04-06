@@ -171,6 +171,30 @@ export const trapRouter = router({
       return { items, total: Number(countResult[0].count), page, pageSize };
     }),
 
+  // Get the most recent poison addition for a trap (for default remaining calc)
+  lastPoisonAddition: authedProcedure
+    .input(z.object({ trapId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [last] = await ctx.db
+        .select({
+          remainingGrams: poisonAdditions.remainingGrams,
+          quantityGrams: poisonAdditions.quantityGrams,
+          poisonType: poisonAdditions.poisonType,
+          performedAt: poisonAdditions.performedAt,
+        })
+        .from(poisonAdditions)
+        .where(
+          and(
+            eq(poisonAdditions.trapId, input.trapId),
+            eq(poisonAdditions.tenantId, ctx.tenantId)
+          )
+        )
+        .orderBy(sql`${poisonAdditions.performedAt} DESC`)
+        .limit(1);
+
+      return last ?? null;
+    }),
+
   addPoison: authedProcedure
     .input(
       z.object({
