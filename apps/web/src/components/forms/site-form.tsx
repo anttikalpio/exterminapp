@@ -222,7 +222,7 @@ export function SiteForm({ initialData }: SiteFormProps) {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t("notes")}
+              Notes
             </label>
             <textarea
               value={form.notes}
