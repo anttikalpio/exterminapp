@@ -1,0 +1,1 @@
+ALTER TABLE "poison_additions" ADD COLUMN "remaining_grams" numeric(8, 2);

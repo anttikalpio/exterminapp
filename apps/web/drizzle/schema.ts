@@ -171,6 +171,7 @@ export const poisonAdditions = pgTable(
       .notNull()
       .references(() => users.id),
     poisonType: varchar("poison_type", { length: 100 }).notNull(),
+    remainingGrams: decimal("remaining_grams", { precision: 8, scale: 2 }),
     quantityGrams: decimal("quantity_grams", { precision: 8, scale: 2 }).notNull(),
     recordedLatitude: decimal("recorded_latitude", { precision: 10, scale: 7 }),
     recordedLongitude: decimal("recorded_longitude", { precision: 10, scale: 7 }),

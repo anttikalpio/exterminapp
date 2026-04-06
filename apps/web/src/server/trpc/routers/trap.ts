@@ -140,6 +140,7 @@ export const trapRouter = router({
           .select({
             id: poisonAdditions.id,
             poisonType: poisonAdditions.poisonType,
+            remainingGrams: poisonAdditions.remainingGrams,
             quantityGrams: poisonAdditions.quantityGrams,
             notes: poisonAdditions.notes,
             performedAt: poisonAdditions.performedAt,
@@ -175,6 +176,7 @@ export const trapRouter = router({
       z.object({
         trapId: z.string().uuid(),
         poisonType: z.string().min(1).max(100),
+        remainingGrams: z.number().min(0),
         quantityGrams: z.number().positive(),
         notes: z.string().optional(),
         recordedLatitude: z.number().min(-90).max(90).optional(),
@@ -189,6 +191,7 @@ export const trapRouter = router({
           trapId: input.trapId,
           performedBy: ctx.user.id,
           poisonType: input.poisonType,
+          remainingGrams: input.remainingGrams.toString(),
           quantityGrams: input.quantityGrams.toString(),
           notes: input.notes,
           recordedLatitude: input.recordedLatitude?.toString(),

@@ -8,6 +8,13 @@
       "when": 1775508276071,
       "tag": "0000_shocking_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775512630527,
+      "tag": "0001_nice_magneto",
+      "breakpoints": true
     }
   ]
 }

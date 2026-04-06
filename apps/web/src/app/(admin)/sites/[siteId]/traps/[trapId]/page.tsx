@@ -24,6 +24,7 @@ export default function TrapDetailPage({
   const [showPoisonForm, setShowPoisonForm] = useState(false);
   const [poisonForm, setPoisonForm] = useState({
     poisonType: POISON_TYPES[0] as string,
+    remainingGrams: "",
     quantityGrams: "",
     notes: "",
   });
@@ -40,7 +41,7 @@ export default function TrapDetailPage({
     onSuccess: () => {
       refetchHistory();
       setShowPoisonForm(false);
-      setPoisonForm({ poisonType: POISON_TYPES[0], quantityGrams: "", notes: "" });
+      setPoisonForm({ poisonType: POISON_TYPES[0], remainingGrams: "", quantityGrams: "", notes: "" });
     },
   });
 
@@ -91,6 +92,7 @@ export default function TrapDetailPage({
     addPoisonMutation.mutate({
       trapId,
       poisonType: poisonForm.poisonType,
+      remainingGrams: parseFloat(poisonForm.remainingGrams),
       quantityGrams: parseFloat(poisonForm.quantityGrams),
       notes: poisonForm.notes || undefined,
     });
@@ -229,23 +231,45 @@ export default function TrapDetailPage({
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">
-                  {t("quantity")}
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={poisonForm.quantityGrams}
-                  onChange={(e) =>
-                    setPoisonForm((p) => ({
-                      ...p,
-                      quantityGrams: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    {t("remaining")}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={poisonForm.remainingGrams}
+                    onChange={(e) =>
+                      setPoisonForm((p) => ({
+                        ...p,
+                        remainingGrams: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    {t("quantity")}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={poisonForm.quantityGrams}
+                    onChange={(e) =>
+                      setPoisonForm((p) => ({
+                        ...p,
+                        quantityGrams: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+                  />
+                </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">
@@ -293,9 +317,16 @@ export default function TrapDetailPage({
                       {entry.poisonType.charAt(0).toUpperCase() +
                         entry.poisonType.slice(1).replace(/_/g, " ")}
                     </span>
-                    <span className="text-sm font-medium text-green-600">
-                      {entry.quantityGrams}g
-                    </span>
+                    <div className="text-right text-sm">
+                      {entry.remainingGrams && (
+                        <span className="text-gray-400">
+                          {entry.remainingGrams}g →{" "}
+                        </span>
+                      )}
+                      <span className="font-medium text-green-600">
+                        +{entry.quantityGrams}g
+                      </span>
+                    </div>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
                     <span>{entry.performedByName}</span>
