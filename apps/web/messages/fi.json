@@ -1,0 +1,81 @@
+{
+  "common": {
+    "appName": "ExterminApp",
+    "save": "Tallenna",
+    "cancel": "Peruuta",
+    "delete": "Poista",
+    "edit": "Muokkaa",
+    "create": "Luo",
+    "search": "Hae...",
+    "actions": "Toiminnot",
+    "back": "Takaisin",
+    "loading": "Ladataan...",
+    "noResults": "Ei tuloksia",
+    "confirm": "Vahvista",
+    "yes": "Kyll\u00e4",
+    "no": "Ei",
+    "active": "Aktiivinen",
+    "inactive": "Ei-aktiivinen",
+    "status": "Tila",
+    "language": "Kieli"
+  },
+  "nav": {
+    "dashboard": "Yleiskatsaus",
+    "customers": "Asiakkaat",
+    "employees": "Ty\u00f6ntekij\u00e4t",
+    "sites": "Kohteet",
+    "reports": "Raportit",
+    "settings": "Asetukset",
+    "signOut": "Kirjaudu ulos"
+  },
+  "auth": {
+    "signIn": "Kirjaudu sis\u00e4\u00e4n",
+    "email": "S\u00e4hk\u00f6posti",
+    "password": "Salasana",
+    "signInTitle": "Kirjaudu ExterminApp-j\u00e4rjestelm\u00e4\u00e4n",
+    "signInDescription": "Sy\u00f6t\u00e4 tunnuksesi p\u00e4\u00e4st\u00e4ksesi j\u00e4rjestelm\u00e4\u00e4n",
+    "invalidCredentials": "Virheellinen s\u00e4hk\u00f6posti tai salasana"
+  },
+  "customers": {
+    "title": "Asiakkaat",
+    "addCustomer": "Lis\u00e4\u00e4 asiakas",
+    "editCustomer": "Muokkaa asiakasta",
+    "businessName": "Yrityksen nimi",
+    "contactName": "Yhteyshenkil\u00f6",
+    "contactEmail": "S\u00e4hk\u00f6posti",
+    "contactPhone": "Puhelin",
+    "billingAddress": "Laskutusosoite",
+    "billingEmail": "Laskutuss\u00e4hk\u00f6posti",
+    "notes": "Muistiinpanot",
+    "deleteConfirm": "Haluatko varmasti poistaa t\u00e4m\u00e4n asiakkaan k\u00e4yt\u00f6st\u00e4?",
+    "created": "Asiakas luotu onnistuneesti",
+    "updated": "Asiakas p\u00e4ivitetty onnistuneesti",
+    "deleted": "Asiakas poistettu k\u00e4yt\u00f6st\u00e4 onnistuneesti"
+  },
+  "employees": {
+    "title": "Ty\u00f6ntekij\u00e4t",
+    "addEmployee": "Lis\u00e4\u00e4 ty\u00f6ntekij\u00e4",
+    "editEmployee": "Muokkaa ty\u00f6ntekij\u00e4\u00e4",
+    "firstName": "Etunimi",
+    "lastName": "Sukunimi",
+    "email": "S\u00e4hk\u00f6posti",
+    "phone": "Puhelin",
+    "role": "Rooli",
+    "password": "Salasana",
+    "roleAdmin": "Yll\u00e4pit\u00e4j\u00e4",
+    "roleFieldTech": "Kentt\u00e4teknikko",
+    "deactivate": "Poista k\u00e4yt\u00f6st\u00e4",
+    "deactivateConfirm": "Haluatko varmasti poistaa t\u00e4m\u00e4n ty\u00f6ntekij\u00e4n k\u00e4yt\u00f6st\u00e4?",
+    "created": "Ty\u00f6ntekij\u00e4 luotu onnistuneesti",
+    "updated": "Ty\u00f6ntekij\u00e4 p\u00e4ivitetty onnistuneesti",
+    "deactivated": "Ty\u00f6ntekij\u00e4 poistettu k\u00e4yt\u00f6st\u00e4 onnistuneesti"
+  },
+  "dashboard": {
+    "title": "Yleiskatsaus",
+    "welcome": "Tervetuloa, {name}",
+    "totalCustomers": "Asiakkaat yhteens\u00e4",
+    "totalEmployees": "Ty\u00f6ntekij\u00e4t yhteens\u00e4",
+    "totalSites": "Kohteet yhteens\u00e4",
+    "totalTraps": "Ansat yhteens\u00e4"
+  }
+}

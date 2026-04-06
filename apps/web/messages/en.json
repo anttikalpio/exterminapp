@@ -1,0 +1,81 @@
+{
+  "common": {
+    "appName": "ExterminApp",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search...",
+    "actions": "Actions",
+    "back": "Back",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": "Status",
+    "language": "Language"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "employees": "Employees",
+    "sites": "Sites",
+    "reports": "Reports",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "signInTitle": "Sign in to ExterminApp",
+    "signInDescription": "Enter your credentials to access the system",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "customers": {
+    "title": "Customers",
+    "addCustomer": "Add Customer",
+    "editCustomer": "Edit Customer",
+    "businessName": "Business Name",
+    "contactName": "Contact Name",
+    "contactEmail": "Contact Email",
+    "contactPhone": "Contact Phone",
+    "billingAddress": "Billing Address",
+    "billingEmail": "Billing Email",
+    "notes": "Notes",
+    "deleteConfirm": "Are you sure you want to deactivate this customer?",
+    "created": "Customer created successfully",
+    "updated": "Customer updated successfully",
+    "deleted": "Customer deactivated successfully"
+  },
+  "employees": {
+    "title": "Employees",
+    "addEmployee": "Add Employee",
+    "editEmployee": "Edit Employee",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "password": "Password",
+    "roleAdmin": "Administrator",
+    "roleFieldTech": "Field Technician",
+    "deactivate": "Deactivate",
+    "deactivateConfirm": "Are you sure you want to deactivate this employee?",
+    "created": "Employee created successfully",
+    "updated": "Employee updated successfully",
+    "deactivated": "Employee deactivated successfully"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome, {name}",
+    "totalCustomers": "Total Customers",
+    "totalEmployees": "Total Employees",
+    "totalSites": "Total Sites",
+    "totalTraps": "Total Traps"
+  }
+}
