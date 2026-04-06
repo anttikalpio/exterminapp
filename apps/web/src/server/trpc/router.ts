@@ -5,6 +5,7 @@ import { dashboardRouter } from "./routers/dashboard";
 import { siteRouter } from "./routers/site";
 import { trapRouter } from "./routers/trap";
 import { settingsRouter } from "./routers/settings";
+import { reportRouter } from "./routers/report";
 
 export const appRouter = router({
   customer: customerRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   site: siteRouter,
   trap: trapRouter,
   settings: settingsRouter,
+  report: reportRouter,
 });
 
 export type AppRouter = typeof appRouter;
