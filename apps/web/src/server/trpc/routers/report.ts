@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, sql, gte, lte, desc } from "drizzle-orm";
+import { eq, and, sql, gte, lte, desc, inArray } from "drizzle-orm";
 import { router, adminProcedure } from "../trpc";
 import {
   reports,
@@ -165,7 +165,7 @@ export const reportRouter = router({
           .where(
             and(
               eq(poisonAdditions.tenantId, ctx.tenantId),
-              sql`${poisonAdditions.trapId} = ANY(${trapIds})`,
+              inArray(poisonAdditions.trapId, trapIds),
               gte(poisonAdditions.performedAt, new Date(periodStart)),
               lte(
                 poisonAdditions.performedAt,

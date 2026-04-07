@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@exterminapp/shared"],
+  serverExternalPackages: ["@react-pdf/renderer"],
 };
 
 export default withNextIntl(nextConfig);

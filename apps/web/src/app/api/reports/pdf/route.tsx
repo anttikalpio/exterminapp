@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, sql, gte, lte } from "drizzle-orm";
+import { eq, and, sql, gte, lte, inArray } from "drizzle-orm";
 import { renderToBuffer } from "@react-pdf/renderer";
 import path from "path";
 import { existsSync, readFileSync } from "fs";
@@ -16,6 +16,16 @@ import {
 import { ReportPdf } from "@/components/pdf/report-pdf";
 
 export async function GET(req: NextRequest) {
+  try {
+    return await handlePdfRequest(req);
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+    const message = err instanceof Error ? err.message : "PDF generation failed";
+    return new NextResponse(message, { status: 500 });
+  }
+}
+
+async function handlePdfRequest(req: NextRequest) {
   const session = await auth();
   if (!session?.user || session.user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -100,7 +110,7 @@ export async function GET(req: NextRequest) {
       .where(
         and(
           eq(poisonAdditions.tenantId, tenantId),
-          sql`${poisonAdditions.trapId} = ANY(${trapIds})`,
+          inArray(poisonAdditions.trapId, trapIds),
           gte(poisonAdditions.performedAt, new Date(periodStart)),
           lte(
             poisonAdditions.performedAt,
@@ -143,21 +153,21 @@ export async function GET(req: NextRequest) {
   const preparedBy = session.user.name || session.user.email || "";
 
   const pdfBuffer = await renderToBuffer(
-    ReportPdf({
-      title,
-      periodStart,
-      periodEnd,
-      comments,
-      preparedBy,
-      company: company ?? null,
-      logoUrl,
-      site: siteInfo,
-      traps: siteTraps,
-      poisonHistory,
-    })
+    <ReportPdf
+      title={title}
+      periodStart={periodStart}
+      periodEnd={periodEnd}
+      comments={comments}
+      preparedBy={preparedBy}
+      company={company ?? null}
+      logoUrl={logoUrl}
+      site={siteInfo}
+      traps={siteTraps}
+      poisonHistory={poisonHistory}
+    />
   );
 
-  return new NextResponse(pdfBuffer as unknown as BodyInit, {
+  return new NextResponse(new Uint8Array(pdfBuffer), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",

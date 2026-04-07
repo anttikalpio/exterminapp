@@ -42,6 +42,7 @@ export default function NewReportPage() {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [savedReportId, setSavedReportId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Data queries
   const { data: customers } = trpc.report.customerOptions.useQuery();
@@ -89,6 +90,7 @@ export default function NewReportPage() {
 
   const handleDownloadPdf = async () => {
     setPdfGenerating(true);
+    setErrorMsg("");
     try {
       const params = new URLSearchParams({
         siteId,
@@ -98,7 +100,10 @@ export default function NewReportPage() {
         comments,
       });
       const res = await fetch(`/api/reports/pdf?${params.toString()}`);
-      if (!res.ok) throw new Error("PDF generation failed");
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `PDF generation failed (${res.status})`);
+      }
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -112,8 +117,8 @@ export default function NewReportPage() {
 
       setSuccessMsg(t("pdfGenerated"));
       setTimeout(() => setSuccessMsg(""), 3000);
-    } catch {
-      // error handled silently
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "PDF generation failed");
     } finally {
       setPdfGenerating(false);
     }
@@ -128,6 +133,12 @@ export default function NewReportPage() {
       {successMsg && (
         <div className="mb-4 rounded-md bg-green-50 p-3 text-sm text-green-700">
           {successMsg}
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+          {errorMsg}
         </div>
       )}
 
