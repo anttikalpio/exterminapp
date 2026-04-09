@@ -123,7 +123,13 @@ export function SiteMap({
       const marker = L.marker([lat, lng], { icon }).addTo(
         markersRef.current!
       );
-      marker.bindTooltip(trap.label, { direction: "top", offset: [0, -10] });
+      // Permanent labels so users can identify traps without hovering.
+      marker.bindTooltip(trap.label, {
+        direction: "top",
+        offset: [0, -10],
+        permanent: true,
+        className: "trap-label",
+      });
 
       if (onTrapClick) {
         marker.on("click", () => onTrapClick(trap.id));

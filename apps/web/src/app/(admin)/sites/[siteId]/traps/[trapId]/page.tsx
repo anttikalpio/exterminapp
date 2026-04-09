@@ -1,11 +1,10 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Plus, Crosshair } from "lucide-react";
-import { POISON_TYPES } from "@exterminapp/shared";
+import { ArrowLeft, Crosshair } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const SiteMap = dynamic(
@@ -21,56 +20,13 @@ export default function TrapDetailPage({
   const { siteId, trapId } = use(params);
   const t = useTranslations("traps");
   const tc = useTranslations("common");
-  const [showPoisonForm, setShowPoisonForm] = useState(false);
-  const [poisonForm, setPoisonForm] = useState({
-    poisonType: POISON_TYPES[0] as string,
-    remainingGrams: "",
-    quantityGrams: "",
-    notes: "",
-  });
-  const [statusForm, setStatusForm] = useState<string | null>(null);
 
   const { data: trap, isLoading } = trpc.trap.getById.useQuery({ id: trapId });
   const { data: allTraps } = trpc.trap.listBySite.useQuery({ siteId });
-  const {
-    data: poisonHistory,
-    refetch: refetchHistory,
-  } = trpc.trap.poisonHistory.useQuery({ trapId });
-  const { data: lastAddition, refetch: refetchLast } =
-    trpc.trap.lastPoisonAddition.useQuery({ trapId });
-
-  const addPoisonMutation = trpc.trap.addPoison.useMutation({
-    onSuccess: () => {
-      refetchHistory();
-      refetchLast();
-      setShowPoisonForm(false);
-      setPoisonForm({ poisonType: POISON_TYPES[0], remainingGrams: "", quantityGrams: "", notes: "" });
-    },
-  });
-
-  const openPoisonForm = () => {
-    // Pre-fill with defaults from last addition
-    const defaultRemaining =
-      lastAddition?.remainingGrams && lastAddition?.quantityGrams
-        ? (
-            parseFloat(lastAddition.remainingGrams) +
-            parseFloat(lastAddition.quantityGrams)
-          ).toFixed(2)
-        : "";
-    const defaultPoisonType = lastAddition?.poisonType ?? (POISON_TYPES[0] as string);
-
-    setPoisonForm({
-      poisonType: defaultPoisonType,
-      remainingGrams: defaultRemaining,
-      quantityGrams: "",
-      notes: "",
-    });
-    setShowPoisonForm(true);
-  };
+  const { data: poisonHistory } = trpc.trap.poisonHistory.useQuery({ trapId });
 
   const updateStatusMutation = trpc.trap.update.useMutation({
     onSuccess: () => {
-      setStatusForm(null);
       // Refetch trap data
       window.location.reload();
     },
@@ -108,17 +64,6 @@ export default function TrapDetailPage({
       case "removed": return "bg-red-100 text-red-600";
       default: return "bg-gray-100 text-gray-600";
     }
-  };
-
-  const handleAddPoison = (e: React.FormEvent) => {
-    e.preventDefault();
-    addPoisonMutation.mutate({
-      trapId,
-      poisonType: poisonForm.poisonType,
-      remainingGrams: parseFloat(poisonForm.remainingGrams),
-      quantityGrams: parseFloat(poisonForm.quantityGrams),
-      notes: poisonForm.notes || undefined,
-    });
   };
 
   const handleStatusChange = (newStatus: string) => {
@@ -217,116 +162,12 @@ export default function TrapDetailPage({
           </div>
         </div>
 
-        {/* Poison History */}
+        {/* Poison History (read-only — poison is added through visits now) */}
         <div className="rounded-lg border border-gray-200 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <div className="border-b border-gray-200 px-4 py-3">
             <h2 className="font-medium text-gray-900">{t("poisonHistory")}</h2>
-            <button
-              onClick={() => (showPoisonForm ? setShowPoisonForm(false) : openPoisonForm())}
-              className="flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
-            >
-              <Plus className="h-3 w-3" />
-              {t("addPoison")}
-            </button>
           </div>
 
-          {/* Add Poison Form */}
-          {showPoisonForm && (
-            <form
-              onSubmit={handleAddPoison}
-              className="space-y-3 border-b border-gray-200 bg-gray-50 px-4 py-3"
-            >
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">
-                  {t("poisonType")}
-                </label>
-                <select
-                  value={poisonForm.poisonType}
-                  onChange={(e) =>
-                    setPoisonForm((p) => ({ ...p, poisonType: e.target.value }))
-                  }
-                  className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                >
-                  {POISON_TYPES.map((pt) => (
-                    <option key={pt} value={pt}>
-                      {pt.charAt(0).toUpperCase() + pt.slice(1).replace(/_/g, " ")}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">
-                    {t("remaining")}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    value={poisonForm.remainingGrams}
-                    onChange={(e) =>
-                      setPoisonForm((p) => ({
-                        ...p,
-                        remainingGrams: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">
-                    {t("quantity")}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    value={poisonForm.quantityGrams}
-                    onChange={(e) =>
-                      setPoisonForm((p) => ({
-                        ...p,
-                        quantityGrams: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">
-                  Notes
-                </label>
-                <textarea
-                  value={poisonForm.notes}
-                  onChange={(e) =>
-                    setPoisonForm((p) => ({ ...p, notes: e.target.value }))
-                  }
-                  rows={2}
-                  className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={addPoisonMutation.isPending}
-                  className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                >
-                  {addPoisonMutation.isPending ? tc("loading") : tc("save")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPoisonForm(false)}
-                  className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
-                >
-                  {tc("cancel")}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* History List */}
           <div className="max-h-96 divide-y divide-gray-100 overflow-y-auto">
             {!poisonHistory || poisonHistory.items.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-gray-400">

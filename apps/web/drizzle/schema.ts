@@ -161,6 +161,35 @@ export const traps = pgTable(
 );
 
 // ============================================================
+// VISITS (service visits to a site)
+// ============================================================
+export const visits = pgTable(
+  "visits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id),
+    name: varchar("name", { length: 255 }).notNull(),
+    visitedAt: timestamp("visited_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("visits_tenant_idx").on(table.tenantId),
+    index("visits_site_idx").on(table.siteId),
+    index("visits_visited_at_idx").on(table.visitedAt),
+  ]
+);
+
+// ============================================================
 // POISON ADDITIONS (immutable audit log)
 // ============================================================
 export const poisonAdditions = pgTable(
@@ -170,6 +199,9 @@ export const poisonAdditions = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
+    visitId: uuid("visit_id")
+      .notNull()
+      .references(() => visits.id),
     trapId: uuid("trap_id")
       .notNull()
       .references(() => traps.id),
@@ -188,6 +220,7 @@ export const poisonAdditions = pgTable(
   },
   (table) => [
     index("poison_additions_tenant_idx").on(table.tenantId),
+    index("poison_additions_visit_idx").on(table.visitId),
     index("poison_additions_trap_idx").on(table.trapId),
     index("poison_additions_performed_at_idx").on(table.performedAt),
   ]

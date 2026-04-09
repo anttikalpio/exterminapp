@@ -195,34 +195,4 @@ export const trapRouter = router({
       return last ?? null;
     }),
 
-  addPoison: authedProcedure
-    .input(
-      z.object({
-        trapId: z.string().uuid(),
-        poisonType: z.string().min(1).max(100),
-        remainingGrams: z.number().min(0),
-        quantityGrams: z.number().positive(),
-        notes: z.string().optional(),
-        recordedLatitude: z.number().min(-90).max(90).optional(),
-        recordedLongitude: z.number().min(-180).max(180).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const [addition] = await ctx.db
-        .insert(poisonAdditions)
-        .values({
-          tenantId: ctx.tenantId,
-          trapId: input.trapId,
-          performedBy: ctx.user.id,
-          poisonType: input.poisonType,
-          remainingGrams: input.remainingGrams.toString(),
-          quantityGrams: input.quantityGrams.toString(),
-          notes: input.notes,
-          recordedLatitude: input.recordedLatitude?.toString(),
-          recordedLongitude: input.recordedLongitude?.toString(),
-        })
-        .returning();
-
-      return addition;
-    }),
 });

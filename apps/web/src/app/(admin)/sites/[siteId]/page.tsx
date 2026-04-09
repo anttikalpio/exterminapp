@@ -5,7 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Plus, Pencil, UserPlus, X, Crosshair } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Pencil,
+  UserPlus,
+  X,
+  Crosshair,
+  ClipboardList,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 
 const SiteMap = dynamic(
@@ -31,8 +39,11 @@ export default function SiteDetailPage({
   const { data: site, isLoading } = trpc.site.getById.useQuery({ id: siteId });
   const { data: trapList, refetch: refetchTraps } =
     trpc.trap.listBySite.useQuery({ siteId });
+  const { data: visitList, refetch: refetchVisits } =
+    trpc.visit.listBySite.useQuery({ siteId });
   const { data: assignments, refetch: refetchAssignments } =
     trpc.site.getAssignments.useQuery({ siteId });
+  const tv = useTranslations("visits");
   const { data: techOptions } = trpc.site.technicianOptions.useQuery(
     undefined,
     { enabled: showAssignForm }
@@ -49,6 +60,31 @@ export default function SiteDetailPage({
   const unassignMutation = trpc.site.unassign.useMutation({
     onSuccess: () => refetchAssignments(),
   });
+
+  const createVisitMutation = trpc.visit.create.useMutation({
+    onSuccess: (visit) => {
+      refetchVisits();
+      if (visit?.id) router.push(`/sites/${siteId}/visits/${visit.id}`);
+    },
+  });
+
+  const deleteVisitMutation = trpc.visit.delete.useMutation({
+    onSuccess: () => refetchVisits(),
+  });
+
+  const handleStartVisit = () => {
+    createVisitMutation.mutate({ siteId });
+  };
+
+  const handleDeleteVisit = (id: string) => {
+    if (!confirm(tv("deleteConfirm"))) return;
+    deleteVisitMutation.mutate({ id });
+  };
+
+  const formatVisitDate = (d: Date | string) => {
+    const date = typeof d === "string" ? new Date(d) : d;
+    return date.toLocaleDateString();
+  };
 
   if (isLoading) return <p className="text-gray-500">{tc("loading")}</p>;
   if (!site) return <p className="text-gray-500">{tc("noResults")}</p>;
@@ -272,6 +308,74 @@ export default function SiteDetailPage({
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Visits */}
+      <div className="mt-6 rounded-lg border border-gray-200 bg-white">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <h2 className="flex items-center gap-2 font-medium text-gray-900">
+            <ClipboardList className="h-4 w-4 text-gray-500" />
+            {tv("title")}{" "}
+            <span className="text-sm font-normal text-gray-500">
+              ({visitList?.length ?? 0})
+            </span>
+          </h2>
+          <button
+            type="button"
+            onClick={handleStartVisit}
+            disabled={createVisitMutation.isPending}
+            className="flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <Plus className="h-3 w-3" />
+            {tv("startVisit")}
+          </button>
+        </div>
+
+        {createVisitMutation.error && (
+          <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">
+            {createVisitMutation.error.message}
+          </div>
+        )}
+
+        <div className="divide-y divide-gray-100">
+          {!visitList || visitList.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-gray-400">
+              {tv("noVisits")}
+            </p>
+          ) : (
+            visitList.map((v) => (
+              <div
+                key={v.id}
+                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+              >
+                <Link
+                  href={`/sites/${siteId}/visits/${v.id}`}
+                  className="flex flex-1 items-center gap-4"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {v.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatVisitDate(v.visitedAt)} · {v.createdByName}
+                    </p>
+                  </div>
+                  <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                    {tv("poisonCount", { count: v.poisonCount })}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteVisit(v.id)}
+                  className="ml-3 rounded p-1 text-xs text-red-500 hover:bg-red-50 hover:text-red-700"
+                  title={tc("delete")}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { employeeRouter } from "./routers/employee";
 import { dashboardRouter } from "./routers/dashboard";
 import { siteRouter } from "./routers/site";
 import { trapRouter } from "./routers/trap";
+import { visitRouter } from "./routers/visit";
 import { settingsRouter } from "./routers/settings";
 import { reportRouter } from "./routers/report";
 
@@ -13,6 +14,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   site: siteRouter,
   trap: trapRouter,
+  visit: visitRouter,
   settings: settingsRouter,
   report: reportRouter,
 });

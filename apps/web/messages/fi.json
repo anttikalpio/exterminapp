@@ -132,6 +132,19 @@
     "noPoisonHistory": "Ei myrkytyksi\u00e4 kirjattu",
     "clickMapToPlace": "Napsauta karttaa sijoittaaksesi ansan"
   },
+  "visits": {
+    "title": "K\u00e4ynnit",
+    "startVisit": "Aloita k\u00e4ynti",
+    "noVisits": "Ei k\u00e4yntej\u00e4 kirjattu",
+    "poisonCount": "{count, plural, =0 {ei myrkytyksi\u00e4} one {# myrkytys} other {# myrkytyst\u00e4}}",
+    "deleteConfirm": "Haluatko varmasti poistaa t\u00e4m\u00e4n k\u00e4ynnin? My\u00f6s sen aikana kirjatut myrkytykset poistetaan.",
+    "createdBy": "Kirjannut",
+    "notes": "Muistiinpanot",
+    "clickTrapToAddPoison": "Napsauta kartalta ansaa lis\u00e4t\u00e4ksesi siihen myrkky\u00e4 t\u00e4h\u00e4n k\u00e4yntiin.",
+    "addPoisonFor": "Lis\u00e4\u00e4 myrkky\u00e4 ansaan {label}",
+    "poisonForThisVisit": "T\u00e4m\u00e4n k\u00e4ynnin aikana lis\u00e4tty myrkky",
+    "deletePoisonConfirm": "Poistetaanko t\u00e4m\u00e4 myrkytys?"
+  },
   "reports": {
     "title": "Raportit",
     "createReport": "Luo raportti",
