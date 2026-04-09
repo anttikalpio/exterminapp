@@ -41,6 +41,14 @@ interface SiteMapProps {
    * clicking the map to place a marker) don't jerk the viewport back.
    */
   focusOn?: { lat: number; lng: number } | null;
+  /**
+   * When set together with `center`, fits the map to a square of this
+   * radius (in meters) around the center. Also disables the auto-fit to
+   * existing traps so the view stays on the site area while the user
+   * places new traps. Applies on mount and when `center` arrives
+   * asynchronously (e.g. while site data loads).
+   */
+  fitRadiusMeters?: number;
   traps?: Trap[];
   onMapClick?: (lat: number, lng: number) => void;
   onTrapClick?: (trapId: string) => void;
@@ -52,6 +60,7 @@ interface SiteMapProps {
 export function SiteMap({
   center,
   focusOn,
+  fitRadiusMeters,
   traps = [],
   onMapClick,
   onTrapClick,
@@ -144,8 +153,11 @@ export function SiteMap({
       }
     });
 
-    // Fit bounds if we have traps
-    if (traps.length > 0 && mapRef.current) {
+    // Fit bounds if we have traps. Suppressed when `fitRadiusMeters` is
+    // set — in that mode the caller wants a stable view centered on the
+    // site, and dragging the viewport around as traps load would fight
+    // the user placing new traps.
+    if (traps.length > 0 && !fitRadiusMeters && mapRef.current) {
       const coords = traps
         .map((t) => [parseFloat(t.latitude), parseFloat(t.longitude)] as [number, number])
         .filter(([lat, lng]) => !isNaN(lat) && !isNaN(lng));
@@ -154,7 +166,18 @@ export function SiteMap({
         mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 18 });
       }
     }
-  }, [traps, selectedTrapId, onTrapClick]);
+  }, [traps, selectedTrapId, onTrapClick, fitRadiusMeters]);
+
+  // Fit the viewport to a fixed radius around `center`. Runs on mount
+  // and again if `center` arrives asynchronously (e.g. when site data
+  // loads after the map has already mounted with an undefined center).
+  useEffect(() => {
+    if (!mapRef.current || !center || !fitRadiusMeters) return;
+    const bounds = L.latLng(center.lat, center.lng).toBounds(
+      fitRadiusMeters * 2
+    );
+    mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+  }, [center?.lat, center?.lng, fitRadiusMeters]);
 
   // Re-focus the map when `focusOn` changes (e.g. after geocoding an
   // address). Uses primitive deps so a new object reference with the same
