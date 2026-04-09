@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { eq, and, ilike, sql } from "drizzle-orm";
 import { router, adminProcedure } from "../trpc";
+import { throwFriendlyPgError } from "../pg-errors";
 import { customers } from "../../../../drizzle/schema";
 import {
   createCustomerSchema,
@@ -71,21 +72,25 @@ export const customerRouter = router({
   create: adminProcedure
     .input(createCustomerSchema)
     .mutation(async ({ ctx, input }) => {
-      const [customer] = await ctx.db
-        .insert(customers)
-        .values({
-          tenantId: ctx.tenantId,
-          businessName: input.businessName,
-          contactName: input.contactName,
-          contactEmail: input.contactEmail || null,
-          contactPhone: input.contactPhone,
-          billingAddress: input.billingAddress,
-          billingEmail: input.billingEmail || null,
-          notes: input.notes,
-        })
-        .returning();
+      try {
+        const [customer] = await ctx.db
+          .insert(customers)
+          .values({
+            tenantId: ctx.tenantId,
+            businessName: input.businessName,
+            contactName: input.contactName,
+            contactEmail: input.contactEmail || null,
+            contactPhone: input.contactPhone,
+            billingAddress: input.billingAddress,
+            billingEmail: input.billingEmail || null,
+            notes: input.notes,
+          })
+          .returning();
 
-      return customer;
+        return customer;
+      } catch (err) {
+        throwFriendlyPgError(err, "customer");
+      }
     }),
 
   update: adminProcedure
@@ -96,23 +101,27 @@ export const customerRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const [customer] = await ctx.db
-        .update(customers)
-        .set({
-          ...input.data,
-          contactEmail: input.data.contactEmail || null,
-          billingEmail: input.data.billingEmail || null,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(customers.id, input.id),
-            eq(customers.tenantId, ctx.tenantId)
+      try {
+        const [customer] = await ctx.db
+          .update(customers)
+          .set({
+            ...input.data,
+            contactEmail: input.data.contactEmail || null,
+            billingEmail: input.data.billingEmail || null,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(customers.id, input.id),
+              eq(customers.tenantId, ctx.tenantId)
+            )
           )
-        )
-        .returning();
+          .returning();
 
-      return customer;
+        return customer;
+      } catch (err) {
+        throwFriendlyPgError(err, "customer");
+      }
     }),
 
   delete: adminProcedure

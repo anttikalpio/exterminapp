@@ -46,10 +46,12 @@
     "contactPhone": "Contact Phone",
     "billingAddress": "Billing Address",
     "billingEmail": "Billing Email",
+    "notes": "Notes",
     "deleteConfirm": "Are you sure you want to deactivate this customer?",
     "created": "Customer created successfully",
     "updated": "Customer updated successfully",
-    "deleted": "Customer deactivated successfully"
+    "deleted": "Customer deactivated successfully",
+    "saveError": "Could not save customer"
   },
   "employees": {
     "title": "Employees",
