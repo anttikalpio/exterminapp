@@ -50,7 +50,12 @@ export default function EditCustomerPage({
           contactName: customer.contactName ?? "",
           contactEmail: customer.contactEmail ?? "",
           contactPhone: customer.contactPhone ?? "",
-          billingAddress: customer.billingAddress ?? "",
+          orderingParty: customer.orderingParty ?? "",
+          billingStreetAddress: customer.billingStreetAddress ?? "",
+          billingPoBox: customer.billingPoBox ?? "",
+          billingZipCode: customer.billingZipCode ?? "",
+          billingCity: customer.billingCity ?? "",
+          billingEinvoiceAddress: customer.billingEinvoiceAddress ?? "",
           billingEmail: customer.billingEmail ?? "",
           notes: customer.notes ?? "",
         }}

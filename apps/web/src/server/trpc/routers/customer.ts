@@ -82,7 +82,12 @@ export const customerRouter = router({
             contactName: input.contactName,
             contactEmail: input.contactEmail || null,
             contactPhone: input.contactPhone,
-            billingAddress: input.billingAddress,
+            orderingParty: input.orderingParty,
+            billingStreetAddress: input.billingStreetAddress,
+            billingPoBox: input.billingPoBox,
+            billingZipCode: input.billingZipCode,
+            billingCity: input.billingCity,
+            billingEinvoiceAddress: input.billingEinvoiceAddress,
             billingEmail: input.billingEmail || null,
             notes: input.notes,
           })

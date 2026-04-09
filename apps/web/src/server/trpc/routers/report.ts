@@ -104,7 +104,6 @@ export const reportRouter = router({
           customerContact: customers.contactName,
           customerPhone: customers.contactPhone,
           customerEmail: customers.contactEmail,
-          customerAddress: customers.billingAddress,
         })
         .from(sites)
         .innerJoin(customers, eq(sites.customerId, customers.id))

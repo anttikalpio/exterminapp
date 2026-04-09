@@ -23,7 +23,12 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
     contactName: initialData?.contactName ?? "",
     contactEmail: initialData?.contactEmail ?? "",
     contactPhone: initialData?.contactPhone ?? "",
-    billingAddress: initialData?.billingAddress ?? "",
+    orderingParty: initialData?.orderingParty ?? "",
+    billingStreetAddress: initialData?.billingStreetAddress ?? "",
+    billingPoBox: initialData?.billingPoBox ?? "",
+    billingZipCode: initialData?.billingZipCode ?? "",
+    billingCity: initialData?.billingCity ?? "",
+    billingEinvoiceAddress: initialData?.billingEinvoiceAddress ?? "",
     billingEmail: initialData?.billingEmail ?? "",
     notes: initialData?.notes ?? "",
   });
@@ -201,20 +206,116 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
-          {t("billingAddress")}
+          {t("orderingParty")}
         </label>
         <textarea
-          value={form.billingAddress}
-          onChange={(e) => updateField("billingAddress", e.target.value)}
+          value={form.orderingParty}
+          onChange={(e) => updateField("orderingParty", e.target.value)}
           rows={2}
-          className={inputClass("billingAddress")}
+          className={inputClass("orderingParty")}
+          placeholder={t("orderingPartyPlaceholder")}
         />
-        {getFieldError("billingAddress") && (
+        {getFieldError("orderingParty") && (
           <p className="mt-1 text-xs text-red-600">
-            {getFieldError("billingAddress")}
+            {getFieldError("orderingParty")}
           </p>
         )}
       </div>
+
+      <fieldset className="space-y-4 rounded-md border border-gray-200 p-4">
+        <legend className="px-2 text-sm font-medium text-gray-700">
+          {t("billingAddress")}
+        </legend>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            {t("billingStreetAddress")}
+          </label>
+          <input
+            type="text"
+            value={form.billingStreetAddress}
+            onChange={(e) =>
+              updateField("billingStreetAddress", e.target.value)
+            }
+            className={inputClass("billingStreetAddress")}
+          />
+          {getFieldError("billingStreetAddress") && (
+            <p className="mt-1 text-xs text-red-600">
+              {getFieldError("billingStreetAddress")}
+            </p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_2fr]">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              {t("billingPoBox")}
+            </label>
+            <input
+              type="text"
+              value={form.billingPoBox}
+              onChange={(e) => updateField("billingPoBox", e.target.value)}
+              className={inputClass("billingPoBox")}
+            />
+            {getFieldError("billingPoBox") && (
+              <p className="mt-1 text-xs text-red-600">
+                {getFieldError("billingPoBox")}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              {t("billingZipCode")}
+            </label>
+            <input
+              type="text"
+              value={form.billingZipCode}
+              onChange={(e) => updateField("billingZipCode", e.target.value)}
+              className={inputClass("billingZipCode")}
+            />
+            {getFieldError("billingZipCode") && (
+              <p className="mt-1 text-xs text-red-600">
+                {getFieldError("billingZipCode")}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              {t("billingCity")}
+            </label>
+            <input
+              type="text"
+              value={form.billingCity}
+              onChange={(e) => updateField("billingCity", e.target.value)}
+              className={inputClass("billingCity")}
+            />
+            {getFieldError("billingCity") && (
+              <p className="mt-1 text-xs text-red-600">
+                {getFieldError("billingCity")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            {t("billingEinvoiceAddress")}
+          </label>
+          <input
+            type="text"
+            value={form.billingEinvoiceAddress}
+            onChange={(e) =>
+              updateField("billingEinvoiceAddress", e.target.value)
+            }
+            className={inputClass("billingEinvoiceAddress")}
+          />
+          {getFieldError("billingEinvoiceAddress") && (
+            <p className="mt-1 text-xs text-red-600">
+              {getFieldError("billingEinvoiceAddress")}
+            </p>
+          )}
+        </div>
+      </fieldset>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">

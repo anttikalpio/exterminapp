@@ -6,7 +6,12 @@ export const createCustomerSchema = z.object({
   contactName: z.string().max(255).optional(),
   contactEmail: z.string().email().max(255).optional().or(z.literal("")),
   contactPhone: z.string().max(30).optional(),
-  billingAddress: z.string().optional(),
+  orderingParty: z.string().optional(),
+  billingStreetAddress: z.string().max(255).optional(),
+  billingPoBox: z.string().max(50).optional(),
+  billingZipCode: z.string().max(20).optional(),
+  billingCity: z.string().max(100).optional(),
+  billingEinvoiceAddress: z.string().max(255).optional(),
   billingEmail: z.string().email().max(255).optional().or(z.literal("")),
   notes: z.string().optional(),
 });

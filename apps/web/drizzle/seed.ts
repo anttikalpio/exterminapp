@@ -74,7 +74,9 @@ async function seed() {
       contactName: "Anna Virtanen",
       contactEmail: "anna@ravintolahelsinki.fi",
       contactPhone: "+358 9 1234567",
-      billingAddress: "Mannerheimintie 10, 00100 Helsinki",
+      billingStreetAddress: "Mannerheimintie 10",
+      billingZipCode: "00100",
+      billingCity: "Helsinki",
       billingEmail: "laskut@ravintolahelsinki.fi",
     },
     {
@@ -83,7 +85,9 @@ async function seed() {
       contactName: "Pekka Korhonen",
       contactEmail: "pekka@k-market-kallio.fi",
       contactPhone: "+358 9 2345678",
-      billingAddress: "Hämeentie 25, 00530 Helsinki",
+      billingStreetAddress: "Hämeentie 25",
+      billingZipCode: "00530",
+      billingCity: "Helsinki",
     },
     {
       tenantId,
@@ -91,7 +95,9 @@ async function seed() {
       contactName: "Liisa Mäkinen",
       contactEmail: "liisa@hotellitampere.fi",
       contactPhone: "+358 3 3456789",
-      billingAddress: "Hämeenkatu 15, 33100 Tampere",
+      billingStreetAddress: "Hämeenkatu 15",
+      billingZipCode: "33100",
+      billingCity: "Tampere",
       billingEmail: "billing@hotellitampere.fi",
     },
   ]);
