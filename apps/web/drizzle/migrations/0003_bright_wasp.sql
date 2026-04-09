@@ -18,40 +18,72 @@ CREATE INDEX "visits_tenant_idx" ON "visits" USING btree ("tenant_id");--> state
 CREATE INDEX "visits_site_idx" ON "visits" USING btree ("site_id");--> statement-breakpoint
 CREATE INDEX "visits_visited_at_idx" ON "visits" USING btree ("visited_at");--> statement-breakpoint
 
--- Add visit_id as nullable so we can backfill existing rows.
+-- Add visit_id as nullable so we can backfill any pre-existing rows.
 ALTER TABLE "poison_additions" ADD COLUMN "visit_id" uuid;--> statement-breakpoint
 
 -- Backfill: for every site that has pre-existing poison_additions, create an
 -- "Initial visit" dated to the earliest addition at that site, and link all
--- of that site's additions to it. Picks any admin user at the tenant as the
--- visit creator; falls back to the performer of the earliest addition if no
--- admin exists.
-INSERT INTO "visits" ("id", "tenant_id", "site_id", "name", "visited_at", "created_by", "notes", "created_at", "updated_at")
-SELECT
-	gen_random_uuid(),
-	t."tenant_id",
-	t."site_id",
-	'Initial visit',
-	MIN(pa."performed_at"),
-	COALESCE(
-		(SELECT u."id" FROM "users" u WHERE u."tenant_id" = t."tenant_id" AND u."role" = 'admin' AND u."is_active" = true LIMIT 1),
-		MIN(pa."performed_by")
-	),
-	'Automatically created during migration to the visits model.',
-	now(),
-	now()
-FROM "poison_additions" pa
-JOIN "traps" t ON t."id" = pa."trap_id"
-WHERE pa."visit_id" IS NULL
-GROUP BY t."tenant_id", t."site_id";--> statement-breakpoint
+-- of that site's additions to it. Wrapped in a PL/pgSQL DO block with an
+-- explicit per-row loop so that on a fresh install (empty poison_additions
+-- table) the loop iterates 0 times and the block is a pure no-op — no
+-- complex INSERT...SELECT planner path is exercised at all.
+DO $migration$
+DECLARE
+	r RECORD;
+	v_creator uuid;
+	v_visit_id uuid;
+BEGIN
+	FOR r IN
+		SELECT
+			t."tenant_id" AS tenant_id,
+			t."site_id" AS site_id,
+			MIN(pa."performed_at") AS earliest_performed_at,
+			MIN(pa."performed_by") AS fallback_user_id
+		FROM "poison_additions" pa
+		JOIN "traps" t ON t."id" = pa."trap_id"
+		WHERE pa."visit_id" IS NULL
+		GROUP BY t."tenant_id", t."site_id"
+	LOOP
+		-- Prefer any active admin at the tenant; fall back to whoever
+		-- performed the earliest addition.
+		SELECT u."id" INTO v_creator
+		FROM "users" u
+		WHERE u."tenant_id" = r.tenant_id
+		  AND u."role" = 'admin'
+		  AND u."is_active" = true
+		LIMIT 1;
 
-UPDATE "poison_additions" pa
-SET "visit_id" = v."id"
-FROM "visits" v, "traps" t
-WHERE pa."trap_id" = t."id"
-  AND v."site_id" = t."site_id"
-  AND v."name" = 'Initial visit'
-  AND pa."visit_id" IS NULL;--> statement-breakpoint
+		IF v_creator IS NULL THEN
+			v_creator := r.fallback_user_id;
+		END IF;
+
+		INSERT INTO "visits" (
+			"tenant_id",
+			"site_id",
+			"name",
+			"visited_at",
+			"created_by",
+			"notes"
+		) VALUES (
+			r.tenant_id,
+			r.site_id,
+			'Initial visit',
+			r.earliest_performed_at,
+			v_creator,
+			'Automatically created during migration to the visits model.'
+		)
+		RETURNING "id" INTO v_visit_id;
+
+		UPDATE "poison_additions" pa
+		SET "visit_id" = v_visit_id
+		FROM "traps" t
+		WHERE pa."trap_id" = t."id"
+		  AND t."tenant_id" = r.tenant_id
+		  AND t."site_id" = r.site_id
+		  AND pa."visit_id" IS NULL;
+	END LOOP;
+END
+$migration$;--> statement-breakpoint
 
 -- Now that every row is backfilled, enforce NOT NULL and add the FK + index.
 ALTER TABLE "poison_additions" ALTER COLUMN "visit_id" SET NOT NULL;--> statement-breakpoint
