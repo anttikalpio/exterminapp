@@ -7,6 +7,77 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
+// PDF-specific label dictionary. Kept colocated with the PDF component
+// rather than loaded from next-intl because @react-pdf/renderer runs in
+// a standalone server-side React tree that is not wrapped by the app's
+// NextIntlClientProvider.
+const PDF_LABELS = {
+  en: {
+    customerSection: "Customer, Site & Work Order",
+    customer: "Customer",
+    site: "Site",
+    workOrder: "Work order",
+    contact: "Contact",
+    phone: "Phone",
+    siteAddress: "Site address",
+    summary: "Summary",
+    totalTraps: "Total traps",
+    activeTraps: "Active traps",
+    serviceVisits: "Service visits",
+    poisonAdditions: "Poison additions",
+    trapSummary: "Trap Summary",
+    noTraps: "No traps on this work order",
+    trap: "Trap",
+    type: "Type",
+    status: "Status",
+    poisonActivity: "Poison Activity",
+    noPoisonActivity: "No poison activity in this period",
+    date: "Date",
+    poison: "Poison",
+    remaining: "Rem.",
+    added: "Added",
+    technician: "Technician",
+    notes: "Notes",
+    comments: "Comments",
+    vat: "VAT:",
+    footer: (preparedBy: string, page: number, total: number) =>
+      `Prepared by ${preparedBy}  •  Page ${page} of ${total}`,
+  },
+  fi: {
+    customerSection: "Asiakas, kohde ja työtilaus",
+    customer: "Asiakas",
+    site: "Kohde",
+    workOrder: "Työtilaus",
+    contact: "Yhteyshenkilö",
+    phone: "Puhelin",
+    siteAddress: "Kohteen osoite",
+    summary: "Yhteenveto",
+    totalTraps: "Ansoja yhteensä",
+    activeTraps: "Aktiivisia ansoja",
+    serviceVisits: "Huoltokäynnit",
+    poisonAdditions: "Myrkkylisäykset",
+    trapSummary: "Ansayhteenveto",
+    noTraps: "Ei ansoja tässä työtilauksessa",
+    trap: "Ansa",
+    type: "Tyyppi",
+    status: "Tila",
+    poisonActivity: "Myrkkytoiminta",
+    noPoisonActivity: "Ei myrkkytoimintaa tällä jaksolla",
+    date: "Päivämäärä",
+    poison: "Myrkky",
+    remaining: "Jälj.",
+    added: "Lisätty",
+    technician: "Teknikko",
+    notes: "Muistiinpanot",
+    comments: "Kommentit",
+    vat: "ALV:",
+    footer: (preparedBy: string, page: number, total: number) =>
+      `Laatija ${preparedBy}  •  Sivu ${page} / ${total}`,
+  },
+} as const;
+
+export type PdfLocale = keyof typeof PDF_LABELS;
+
 type Trap = {
   id: string;
   label: string;
@@ -42,6 +113,7 @@ export type ReportPdfProps = {
   preparedBy: string;
   company: Company | null;
   logoUrl?: string;
+  locale: PdfLocale;
   workOrder: {
     title: string;
     workOrderNumber: string | null;
@@ -185,10 +257,12 @@ export function ReportPdf({
   preparedBy,
   company,
   logoUrl,
+  locale,
   workOrder,
   traps,
   poisonHistory,
 }: ReportPdfProps) {
+  const labels = PDF_LABELS[locale] ?? PDF_LABELS.en;
   const activeTraps = traps.filter((t) => t.status === "active").length;
   const visitDates = new Set(
     poisonHistory.map((p) => formatDate(p.performedAt))
@@ -213,7 +287,11 @@ export function ReportPdf({
               <Text style={styles.companyName}>{company.companyName}</Text>
             )}
             {company?.address && <Text>{company.address}</Text>}
-            {company?.vatNumber && <Text>VAT: {company.vatNumber}</Text>}
+            {company?.vatNumber && (
+              <Text>
+                {labels.vat} {company.vatNumber}
+              </Text>
+            )}
             {company?.contactEmail && <Text>{company.contactEmail}</Text>}
             {company?.contactPhone && <Text>{company.contactPhone}</Text>}
           </View>
@@ -227,18 +305,18 @@ export function ReportPdf({
 
         {/* Customer, Site & Work Order */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Customer, Site & Work Order</Text>
+          <Text style={styles.sectionTitle}>{labels.customerSection}</Text>
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Customer</Text>
+              <Text style={styles.infoLabel}>{labels.customer}</Text>
               <Text style={styles.infoValue}>{workOrder.customerName}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Site</Text>
+              <Text style={styles.infoLabel}>{labels.site}</Text>
               <Text style={styles.infoValue}>{workOrder.siteName}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Work order</Text>
+              <Text style={styles.infoLabel}>{labels.workOrder}</Text>
               <Text style={styles.infoValue}>
                 {workOrder.title}
                 {workOrder.workOrderNumber
@@ -248,7 +326,7 @@ export function ReportPdf({
             </View>
             {workOrder.customerContact && (
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Contact</Text>
+                <Text style={styles.infoLabel}>{labels.contact}</Text>
                 <Text style={styles.infoValue}>
                   {workOrder.customerContact}
                 </Text>
@@ -256,13 +334,13 @@ export function ReportPdf({
             )}
             {workOrder.customerPhone && (
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Phone</Text>
+                <Text style={styles.infoLabel}>{labels.phone}</Text>
                 <Text style={styles.infoValue}>{workOrder.customerPhone}</Text>
               </View>
             )}
             {workOrder.siteAddress && (
               <View style={{ width: "100%", marginTop: 4 }}>
-                <Text style={styles.infoLabel}>Site address</Text>
+                <Text style={styles.infoLabel}>{labels.siteAddress}</Text>
                 <Text style={styles.infoValue}>{workOrder.siteAddress}</Text>
               </View>
             )}
@@ -271,22 +349,22 @@ export function ReportPdf({
 
         {/* Summary */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Summary</Text>
+          <Text style={styles.sectionTitle}>{labels.summary}</Text>
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Total traps</Text>
+              <Text style={styles.infoLabel}>{labels.totalTraps}</Text>
               <Text style={styles.infoValue}>{traps.length}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Active traps</Text>
+              <Text style={styles.infoLabel}>{labels.activeTraps}</Text>
               <Text style={styles.infoValue}>{activeTraps}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Service visits</Text>
+              <Text style={styles.infoLabel}>{labels.serviceVisits}</Text>
               <Text style={styles.infoValue}>{visitDates.size}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Poison additions</Text>
+              <Text style={styles.infoLabel}>{labels.poisonAdditions}</Text>
               <Text style={styles.infoValue}>{poisonHistory.length}</Text>
             </View>
           </View>
@@ -294,15 +372,15 @@ export function ReportPdf({
 
         {/* Traps */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Trap Summary</Text>
+          <Text style={styles.sectionTitle}>{labels.trapSummary}</Text>
           {traps.length === 0 ? (
-            <Text style={styles.empty}>No traps on this work order</Text>
+            <Text style={styles.empty}>{labels.noTraps}</Text>
           ) : (
             <View style={styles.table}>
               <View style={styles.tableHeader}>
-                <Text style={{ width: "30%" }}>Trap</Text>
-                <Text style={{ width: "40%" }}>Type</Text>
-                <Text style={{ width: "30%" }}>Status</Text>
+                <Text style={{ width: "30%" }}>{labels.trap}</Text>
+                <Text style={{ width: "40%" }}>{labels.type}</Text>
+                <Text style={{ width: "30%" }}>{labels.status}</Text>
               </View>
               {traps.map((trap) => (
                 <View key={trap.id} style={styles.tableRow}>
@@ -319,21 +397,23 @@ export function ReportPdf({
 
         {/* Poison Activity */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Poison Activity</Text>
+          <Text style={styles.sectionTitle}>{labels.poisonActivity}</Text>
           {poisonHistory.length === 0 ? (
-            <Text style={styles.empty}>No poison activity in this period</Text>
+            <Text style={styles.empty}>{labels.noPoisonActivity}</Text>
           ) : (
             <View style={styles.table}>
               <View style={styles.tableHeader}>
-                <Text style={{ width: "14%" }}>Date</Text>
-                <Text style={{ width: "12%" }}>Trap</Text>
-                <Text style={{ width: "20%" }}>Poison</Text>
+                <Text style={{ width: "14%" }}>{labels.date}</Text>
+                <Text style={{ width: "12%" }}>{labels.trap}</Text>
+                <Text style={{ width: "20%" }}>{labels.poison}</Text>
                 <Text style={{ width: "10%", textAlign: "right" }}>
-                  Rem.
+                  {labels.remaining}
                 </Text>
-                <Text style={{ width: "10%", textAlign: "right" }}>Added</Text>
-                <Text style={{ width: "18%" }}>Technician</Text>
-                <Text style={{ width: "16%" }}>Notes</Text>
+                <Text style={{ width: "10%", textAlign: "right" }}>
+                  {labels.added}
+                </Text>
+                <Text style={{ width: "18%" }}>{labels.technician}</Text>
+                <Text style={{ width: "16%" }}>{labels.notes}</Text>
               </View>
               {poisonHistory.map((entry) => (
                 <View key={entry.id} style={styles.tableRow}>
@@ -359,7 +439,7 @@ export function ReportPdf({
         {/* Comments */}
         {comments && comments.trim().length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Comments</Text>
+            <Text style={styles.sectionTitle}>{labels.comments}</Text>
             <View style={styles.comments}>
               <Text>{comments}</Text>
             </View>
@@ -370,7 +450,7 @@ export function ReportPdf({
         <Text
           style={styles.footer}
           render={({ pageNumber, totalPages }) =>
-            `Prepared by ${preparedBy}  •  Page ${pageNumber} of ${totalPages}`
+            labels.footer(preparedBy, pageNumber, totalPages)
           }
           fixed
         />

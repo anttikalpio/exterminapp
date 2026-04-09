@@ -7,6 +7,7 @@ import {
   visits,
   workOrders,
   sites,
+  customers,
   traps,
   users,
   poisonAdditions,
@@ -17,21 +18,13 @@ import {
   addVisitPoisonSchema,
 } from "@exterminapp/shared";
 
-/**
- * ISO 8601 week number. Matches `date-fns/getISOWeek` semantics: weeks run
- * Monday to Sunday and week 1 is the week containing the first Thursday of
- * the year. Implemented inline to avoid pulling in a new dependency.
- */
-function getIsoWeek(date: Date): number {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  );
-  // Thursday of the current week determines the ISO week year.
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-}
+// Localized label used as the prefix for the default visit name.
+// Kept inline rather than round-tripping through next-intl since this
+// runs on the server during mutations, not inside a React tree.
+const VISIT_LABEL: Record<string, string> = {
+  en: "Visit",
+  fi: "Käynti",
+};
 
 export const visitRouter = router({
   // List visits for a given work order, newest first.
@@ -97,10 +90,16 @@ export const visitRouter = router({
   create: authedProcedure
     .input(createVisitSchema)
     .mutation(async ({ ctx, input }) => {
-      // Verify the work order belongs to the caller's tenant.
+      // Verify the work order belongs to the caller's tenant and pull
+      // the owning customer's preferred language in the same round-trip
+      // so we can build a localized default visit name.
       const [wo] = await ctx.db
-        .select({ id: workOrders.id })
+        .select({
+          id: workOrders.id,
+          customerLanguage: customers.preferredLanguage,
+        })
         .from(workOrders)
+        .innerJoin(customers, eq(workOrders.customerId, customers.id))
         .where(
           and(
             eq(workOrders.id, input.workOrderId),
@@ -116,8 +115,27 @@ export const visitRouter = router({
         });
       }
 
+      // Default name: "{Visit/Käynti} {N}" where N is a running sequence
+      // number of visits in this work order. Count-based — deleted visits
+      // are not reused, so gaps may appear, which matches user expectations
+      // for a display label.
+      const [{ existingCount }] = await ctx.db
+        .select({
+          existingCount: sql<number>`COUNT(*)::int`,
+        })
+        .from(visits)
+        .where(
+          and(
+            eq(visits.workOrderId, input.workOrderId),
+            eq(visits.tenantId, ctx.tenantId)
+          )
+        );
+
+      const sequence = Number(existingCount) + 1;
+      const label = VISIT_LABEL[wo.customerLanguage] ?? VISIT_LABEL.en;
+      const defaultName = `${label} ${sequence}`;
+
       const visitedAt = input.visitedAt ?? new Date();
-      const defaultName = `Visit ${getIsoWeek(visitedAt)}`;
 
       try {
         const [visit] = await ctx.db
@@ -296,13 +314,5 @@ export const visitRouter = router({
         .returning({ id: poisonAdditions.id });
 
       return deleted ?? null;
-    }),
-
-  // Expose the ISO week number helper so the client can display the default
-  // name for a given date without duplicating the calculation.
-  defaultNameFor: authedProcedure
-    .input(z.object({ visitedAt: z.coerce.date() }))
-    .query(({ input }) => {
-      return { name: `Visit ${getIsoWeek(input.visitedAt)}` };
     }),
 });

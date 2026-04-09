@@ -14,7 +14,7 @@ import {
   users,
   tenants,
 } from "../../../../../drizzle/schema";
-import { ReportPdf } from "@/components/pdf/report-pdf";
+import { ReportPdf, type PdfLocale } from "@/components/pdf/report-pdf";
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,6 +59,7 @@ async function handlePdfRequest(req: NextRequest) {
       customerContact: customers.contactName,
       customerPhone: customers.contactPhone,
       customerEmail: customers.contactEmail,
+      customerLanguage: customers.preferredLanguage,
     })
     .from(workOrders)
     .innerJoin(sites, eq(workOrders.siteId, sites.id))
@@ -163,6 +164,12 @@ async function handlePdfRequest(req: NextRequest) {
 
   const preparedBy = session.user.name || session.user.email || "";
 
+  // Fall back to English if the customer's preferred language isn't one the
+  // PDF component has translations for. Avoids crashing the render path if
+  // someone sets an unsupported locale directly in the DB.
+  const locale: PdfLocale =
+    workOrderInfo.customerLanguage === "fi" ? "fi" : "en";
+
   const pdfBuffer = await renderToBuffer(
     <ReportPdf
       title={title}
@@ -172,6 +179,7 @@ async function handlePdfRequest(req: NextRequest) {
       preparedBy={preparedBy}
       company={company ?? null}
       logoUrl={logoUrl}
+      locale={locale}
       workOrder={{
         title: workOrderInfo.title,
         workOrderNumber: workOrderInfo.workOrderNumber,
