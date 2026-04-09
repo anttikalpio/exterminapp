@@ -100,7 +100,11 @@
     "noAssignments": "Ei m\u00e4\u00e4r\u00e4ttyj\u00e4 teknikkoja",
     "deleteConfirm": "Haluatko varmasti poistaa t\u00e4m\u00e4n kohteen k\u00e4yt\u00f6st\u00e4?",
     "useCurrentLocation": "K\u00e4yt\u00e4 nykyist\u00e4 sijaintia",
-    "viewOnMap": "N\u00e4yt\u00e4 kartalla"
+    "viewOnMap": "N\u00e4yt\u00e4 kartalla",
+    "clickMapToPlace": "Napsauta kartalta asettaaksesi sijainnin",
+    "searchingAddress": "Haetaan osoitetta\u2026",
+    "addressNotFound": "Osoitetta ei l\u00f6ytynyt \u2014 kokeile lis\u00e4t\u00e4 kaupunki tai postinumero",
+    "addressLookupError": "Karttapalveluun ei saatu yhteytt\u00e4"
   },
   "traps": {
     "title": "Ansat",

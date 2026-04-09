@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { MapPin } from "lucide-react";
+import { useGeocode } from "@/hooks/use-geocode";
+import { AlertCircle, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const SiteMap = dynamic(
@@ -39,6 +40,29 @@ export function SiteForm({ initialData }: SiteFormProps) {
     longitude: initialData?.longitude ?? "",
     notes: initialData?.notes ?? "",
   });
+
+  // Debounced address → lat/lng lookup via Nominatim.
+  const geocode = useGeocode(form.address);
+
+  // Target the map viewport should fly to. Separate from the current
+  // lat/lng so clicking the map to place a marker doesn't recenter the
+  // viewport back to the geocoded location.
+  const [focusOn, setFocusOn] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+
+  // When geocoding finds a match, auto-fill lat/lng and re-focus the map.
+  useEffect(() => {
+    if (geocode.status === "found" && geocode.result) {
+      const { lat, lng } = geocode.result;
+      setForm((prev) => ({
+        ...prev,
+        latitude: lat.toFixed(7),
+        longitude: lng.toFixed(7),
+      }));
+      setFocusOn({ lat, lng });
+    }
+  }, [geocode.status, geocode.result]);
 
   const { data: customerOptions } = trpc.site.customerOptions.useQuery();
 
@@ -177,6 +201,30 @@ export function SiteForm({ initialData }: SiteFormProps) {
               rows={2}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
             />
+            {geocode.status === "loading" && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {t("searchingAddress")}
+              </p>
+            )}
+            {geocode.status === "found" && geocode.result && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-green-600">
+                <CheckCircle2 className="h-3 w-3" />
+                <span className="truncate">{geocode.result.displayName}</span>
+              </p>
+            )}
+            {geocode.status === "not_found" && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+                <AlertCircle className="h-3 w-3" />
+                {t("addressNotFound")}
+              </p>
+            )}
+            {geocode.status === "error" && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
+                <AlertCircle className="h-3 w-3" />
+                {t("addressLookupError")}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -253,11 +301,10 @@ export function SiteForm({ initialData }: SiteFormProps) {
         </div>
 
         <div>
-          <p className="mb-2 text-sm text-gray-500">
-            {t("clickMapToPlace") || "Click on the map to set location"}
-          </p>
+          <p className="mb-2 text-sm text-gray-500">{t("clickMapToPlace")}</p>
           <SiteMap
             center={mapCenter}
+            focusOn={focusOn}
             onMapClick={handleMapClick}
             showClickMarker={clickMarker}
             height="400px"

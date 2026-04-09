@@ -99,7 +99,11 @@
     "noAssignments": "No technicians assigned",
     "deleteConfirm": "Are you sure you want to deactivate this site?",
     "useCurrentLocation": "Use Current Location",
-    "viewOnMap": "View on Map"
+    "viewOnMap": "View on Map",
+    "clickMapToPlace": "Click on the map to set the location",
+    "searchingAddress": "Looking up address…",
+    "addressNotFound": "Address not found — try adding city or postal code",
+    "addressLookupError": "Could not reach the geocoding service"
   },
   "traps": {
     "title": "Traps",

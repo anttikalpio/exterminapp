@@ -34,6 +34,13 @@ interface Trap {
 
 interface SiteMapProps {
   center?: { lat: number; lng: number };
+  /**
+   * Target to re-focus the map on AFTER initial mount. Unlike `center`, this
+   * prop's changes trigger a `setView` — useful when geocoding an address.
+   * Intentionally separate from `center` so that user-driven events (like
+   * clicking the map to place a marker) don't jerk the viewport back.
+   */
+  focusOn?: { lat: number; lng: number } | null;
   traps?: Trap[];
   onMapClick?: (lat: number, lng: number) => void;
   onTrapClick?: (trapId: string) => void;
@@ -44,6 +51,7 @@ interface SiteMapProps {
 
 export function SiteMap({
   center,
+  focusOn,
   traps = [],
   onMapClick,
   onTrapClick,
@@ -147,6 +155,16 @@ export function SiteMap({
       }
     }
   }, [traps, selectedTrapId, onTrapClick]);
+
+  // Re-focus the map when `focusOn` changes (e.g. after geocoding an
+  // address). Uses primitive deps so a new object reference with the same
+  // coordinates doesn't retrigger the view change.
+  useEffect(() => {
+    if (!mapRef.current || !focusOn) return;
+    mapRef.current.setView([focusOn.lat, focusOn.lng], 16, {
+      animate: true,
+    });
+  }, [focusOn?.lat, focusOn?.lng]);
 
   // Click marker for trap placement
   useEffect(() => {
