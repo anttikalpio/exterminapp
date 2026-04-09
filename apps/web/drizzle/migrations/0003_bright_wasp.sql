@@ -37,25 +37,23 @@ BEGIN
 		SELECT
 			t."tenant_id" AS tenant_id,
 			t."site_id" AS site_id,
-			MIN(pa."performed_at") AS earliest_performed_at,
-			MIN(pa."performed_by") AS fallback_user_id
+			MIN(pa."performed_at") AS earliest_performed_at
 		FROM "poison_additions" pa
 		JOIN "traps" t ON t."id" = pa."trap_id"
 		WHERE pa."visit_id" IS NULL
 		GROUP BY t."tenant_id", t."site_id"
 	LOOP
-		-- Prefer any active admin at the tenant; fall back to whoever
-		-- performed the earliest addition.
+		-- Prefer any active admin at the tenant; fall back to any active
+		-- user at the tenant. We deliberately avoid MIN(performed_by)
+		-- because Postgres 16 has no min() aggregate for uuid (added in
+		-- Postgres 17) — the parser would reject the whole migration
+		-- even when poison_additions is empty.
 		SELECT u."id" INTO v_creator
 		FROM "users" u
 		WHERE u."tenant_id" = r.tenant_id
-		  AND u."role" = 'admin'
 		  AND u."is_active" = true
+		ORDER BY (u."role" = 'admin') DESC, u."created_at" ASC
 		LIMIT 1;
-
-		IF v_creator IS NULL THEN
-			v_creator := r.fallback_user_id;
-		END IF;
 
 		INSERT INTO "visits" (
 			"tenant_id",
