@@ -201,6 +201,18 @@
     "logoHelp": "PNG tai JPG, max 2MB",
     "saved": "Asetukset tallennettu",
     "logoUploaded": "Logo ladattu onnistuneesti",
-    "logoRemoved": "Logo poistettu"
+    "logoRemoved": "Logo poistettu",
+    "tenantInfo": "Vuokralaisen tiedot",
+    "tenantId": "Vuokralaistunnus",
+    "tenantIdHelp": "Yksil\u00f6llinen tunniste, johon k\u00e4ytt\u00e4j\u00e4tilisi on liitetty. Kaikki tietosi (asiakkaat, kohteet, ansat) on rajattu t\u00e4h\u00e4n vuokralaiseen.",
+    "tenantSlug": "Vuokralaisen tunnus",
+    "tenantNotFound": "Istuntosi viittaa vuokralaiseen, jota ei en\u00e4\u00e4 ole. T\u00e4m\u00e4 tapahtuu yleens\u00e4 tietokannan nollauksen j\u00e4lkeen. Kirjaudu ulos ja takaisin sis\u00e4\u00e4n saadaksesi tuoreen istunnon, tai valitse alta vuokralainen, johon vaihtaa.",
+    "switchTenant": "Vaihda vuokralaista",
+    "switchTenantHelp": "Siirr\u00e4 k\u00e4ytt\u00e4j\u00e4tilisi toiseen vuokralaiseen. Sinut kirjataan ulos, jotta voit kirjautua takaisin tuoreella istunnolla.",
+    "switchTenantConfirm": "Vaihda t\u00e4h\u00e4n vuokralaiseen? Sinut kirjataan ulos ja sinun on kirjauduttava uudelleen sis\u00e4\u00e4n.",
+    "selectTenant": "Valitse vuokralainen\u2026",
+    "copy": "Kopioi",
+    "copied": "Kopioitu",
+    "copyTenantId": "Kopioi vuokralaistunnus"
   }
 }

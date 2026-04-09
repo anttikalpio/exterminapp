@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { signOut } from "next-auth/react";
 import { trpc } from "@/lib/trpc";
-import { Upload, Trash2, Building2 } from "lucide-react";
+import { Upload, Trash2, Building2, Copy, Check } from "lucide-react";
 import Image from "next/image";
 
 export default function SettingsPage() {
@@ -13,9 +14,20 @@ export default function SettingsPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState("");
 
   const { data: company, isLoading, refetch } =
     trpc.settings.getCompany.useQuery();
+  const { data: tenants } = trpc.settings.listTenants.useQuery();
+
+  const switchTenantMutation = trpc.settings.switchTenant.useMutation({
+    onSuccess: async () => {
+      // The JWT still contains the old tenantId; signing out forces a fresh
+      // login that issues a new JWT pointing at the newly assigned tenant.
+      await signOut({ callbackUrl: "/login" });
+    },
+  });
 
   const [form, setForm] = useState({
     companyName: "",
@@ -102,6 +114,24 @@ export default function SettingsPage() {
   const updateField = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  const copyTenantId = async () => {
+    if (!company?.id) return;
+    try {
+      await navigator.clipboard.writeText(company.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore — clipboard API may be unavailable
+    }
+  };
+
+  const handleSwitchTenant = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTenantId) return;
+    if (!confirm(t("switchTenantConfirm"))) return;
+    switchTenantMutation.mutate({ tenantId: selectedTenantId });
+  };
+
   if (isLoading) return <p className="text-gray-500">{tc("loading")}</p>;
 
   return (
@@ -113,6 +143,100 @@ export default function SettingsPage() {
           {successMsg}
         </div>
       )}
+
+      {/* Tenant Information Section */}
+      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="mb-4 text-lg font-medium text-gray-900">
+          {t("tenantInfo")}
+        </h2>
+
+        <div className="mb-4">
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            {t("tenantId")}
+          </label>
+          {company?.id ? (
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs text-gray-800">
+                {company.id}
+              </code>
+              <button
+                type="button"
+                onClick={copyTenantId}
+                className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                title={t("copyTenantId")}
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-green-600" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+                {copied ? t("copied") : t("copy")}
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              {t("tenantNotFound")}
+            </div>
+          )}
+          <p className="mt-1 text-xs text-gray-500">{t("tenantIdHelp")}</p>
+        </div>
+
+        {company?.slug && (
+          <div className="mb-4">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              {t("tenantSlug")}
+            </label>
+            <code className="block rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs text-gray-800">
+              {company.slug}
+            </code>
+          </div>
+        )}
+
+        {/* Switch Tenant */}
+        <form onSubmit={handleSwitchTenant} className="border-t pt-4">
+          <h3 className="mb-2 text-sm font-medium text-gray-900">
+            {t("switchTenant")}
+          </h3>
+          <p className="mb-3 text-xs text-gray-500">
+            {t("switchTenantHelp")}
+          </p>
+
+          {switchTenantMutation.error && (
+            <div className="mb-3 rounded-md bg-red-50 p-3 text-sm text-red-700">
+              {switchTenantMutation.error.message}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <select
+              value={selectedTenantId}
+              onChange={(e) => setSelectedTenantId(e.target.value)}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+            >
+              <option value="">{t("selectTenant")}</option>
+              {tenants?.map((tnt) => (
+                <option key={tnt.id} value={tnt.id}>
+                  {tnt.name} ({tnt.slug}) — {tnt.id.slice(0, 8)}…
+                  {tnt.id === company?.id ? ` ✓` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              disabled={
+                !selectedTenantId ||
+                selectedTenantId === company?.id ||
+                switchTenantMutation.isPending
+              }
+              className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {switchTenantMutation.isPending
+                ? tc("loading")
+                : t("switchTenant")}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Logo Section */}
       <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">

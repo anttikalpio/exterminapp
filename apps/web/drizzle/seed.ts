@@ -7,16 +7,25 @@ const DATABASE_URL =
   process.env.DATABASE_URL ??
   "postgresql://dev:dev@localhost:5432/exterminapp";
 
+// Deterministic UUIDs so that re-running setup.sh (which wipes the DB volume)
+// produces the same tenant + user IDs. This means JWTs issued before the reset
+// continue to work after a fresh seed, instead of pointing at IDs that no
+// longer exist (which used to cause FK violations on customer insert).
+const DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+const DEFAULT_ADMIN_USER_ID = "00000000-0000-0000-0000-000000000002";
+const DEFAULT_TECH_USER_ID = "00000000-0000-0000-0000-000000000003";
+
 async function seed() {
   const client = postgres(DATABASE_URL);
   const db = drizzle(client);
 
   console.log("Seeding database...");
 
-  // Create default tenant
+  // Create default tenant with a stable, well-known UUID.
   const [tenant] = await db
     .insert(tenants)
     .values({
+      id: DEFAULT_TENANT_ID,
       name: "Default",
       slug: "default",
       settings: {},
@@ -24,8 +33,8 @@ async function seed() {
     .onConflictDoNothing()
     .returning();
 
-  const tenantId = tenant?.id;
-  if (!tenantId) {
+  const tenantId = tenant?.id ?? DEFAULT_TENANT_ID;
+  if (!tenant) {
     console.log("Tenant already exists, skipping seed.");
     await client.end();
     return;
@@ -34,6 +43,7 @@ async function seed() {
   // Create admin user
   const adminPasswordHash = await hash("admin123", 12);
   await db.insert(users).values({
+    id: DEFAULT_ADMIN_USER_ID,
     tenantId,
     email: "admin@exterminapp.com",
     passwordHash: adminPasswordHash,
@@ -46,6 +56,7 @@ async function seed() {
   // Create field technician
   const techPasswordHash = await hash("tech1234", 12);
   await db.insert(users).values({
+    id: DEFAULT_TECH_USER_ID,
     tenantId,
     email: "tech@exterminapp.com",
     passwordHash: techPasswordHash,

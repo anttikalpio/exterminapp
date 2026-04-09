@@ -200,6 +200,18 @@
     "logoHelp": "PNG or JPG, max 2MB",
     "saved": "Settings saved successfully",
     "logoUploaded": "Logo uploaded successfully",
-    "logoRemoved": "Logo removed"
+    "logoRemoved": "Logo removed",
+    "tenantInfo": "Tenant Information",
+    "tenantId": "Tenant ID",
+    "tenantIdHelp": "The unique identifier of the tenant your account is linked to. All your data (customers, sites, traps) is scoped to this tenant.",
+    "tenantSlug": "Tenant Slug",
+    "tenantNotFound": "Your session points at a tenant that no longer exists. This usually happens after the database has been reset. Sign out and sign back in to obtain a fresh session, or pick a tenant below to switch to.",
+    "switchTenant": "Switch Tenant",
+    "switchTenantHelp": "Move your user account to a different tenant. You will be signed out so you can log back in with a fresh session.",
+    "switchTenantConfirm": "Switch to this tenant? You will be signed out and need to log in again.",
+    "selectTenant": "Select a tenant…",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyTenantId": "Copy tenant ID"
   }
 }

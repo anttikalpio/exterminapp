@@ -45,12 +45,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
+      // On initial sign-in, copy fields from the authorized user.
       if (user) {
         token.role = (user as { role: string }).role;
         token.tenantId = (user as { tenantId: string }).tenantId;
+        return token;
       }
-      return token;
+
+      // On every subsequent request, re-validate the user against the DB.
+      // If the user no longer exists (e.g. after a setup.sh reset that wiped
+      // and re-seeded the DB), return null so the session is invalidated and
+      // the user is redirected to the login page to obtain a fresh JWT.
+      // This also keeps role/tenantId in the token in sync with the DB.
+      if (!token.sub) return null;
+
+      try {
+        const [dbUser] = await db
+          .select({
+            id: users.id,
+            role: users.role,
+            tenantId: users.tenantId,
+            isActive: users.isActive,
+          })
+          .from(users)
+          .where(eq(users.id, token.sub))
+          .limit(1);
+
+        if (!dbUser || !dbUser.isActive) {
+          return null;
+        }
+
+        token.role = dbUser.role;
+        token.tenantId = dbUser.tenantId;
+        return token;
+      } catch (err) {
+        // If the DB lookup fails (e.g. DB unavailable), keep the existing
+        // token rather than logging the user out spuriously.
+        console.error("[auth] jwt validation failed:", err);
+        return token;
+      }
     },
     session({ session, token }) {
       if (session.user) {
