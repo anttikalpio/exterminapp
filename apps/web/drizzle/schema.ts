@@ -78,6 +78,13 @@ export const customers = pgTable(
     billingCity: varchar("billing_city", { length: 100 }),
     billingEinvoiceAddress: varchar("billing_einvoice_address", { length: 255 }),
     billingEmail: varchar("billing_email", { length: 255 }),
+    // Language used when generating reports for this customer and when
+    // auto-naming visits under their work orders. Separate from the
+    // admin's UI locale — an English-speaking admin can still serve a
+    // Finnish-speaking customer.
+    preferredLanguage: varchar("preferred_language", { length: 5 })
+      .notNull()
+      .default("en"),
     notes: text("notes"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -30,6 +30,7 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
     billingCity: initialData?.billingCity ?? "",
     billingEinvoiceAddress: initialData?.billingEinvoiceAddress ?? "",
     billingEmail: initialData?.billingEmail ?? "",
+    preferredLanguage: initialData?.preferredLanguage ?? "en",
     notes: initialData?.notes ?? "",
   });
 
@@ -214,6 +215,28 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
             </p>
           )}
         </div>
+      </div>
+
+      <div className="max-w-xs">
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          {t("preferredLanguage")}
+        </label>
+        <select
+          value={form.preferredLanguage ?? "en"}
+          onChange={(e) =>
+            setForm((prev) => ({
+              ...prev,
+              preferredLanguage: e.target.value as "en" | "fi",
+            }))
+          }
+          className={inputClass("preferredLanguage")}
+        >
+          <option value="en">English</option>
+          <option value="fi">Suomi</option>
+        </select>
+        <p className="mt-1 text-xs text-gray-500">
+          {t("preferredLanguageHelp")}
+        </p>
       </div>
 
       <div>

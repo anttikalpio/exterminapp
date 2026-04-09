@@ -57,6 +57,13 @@
       "when": 1775763182849,
       "tag": "0007_swift_skullbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1775764453845,
+      "tag": "0008_unusual_inertia",
+      "breakpoints": true
     }
   ]
 }

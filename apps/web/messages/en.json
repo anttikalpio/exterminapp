@@ -61,6 +61,8 @@
     "billingCity": "City",
     "billingEinvoiceAddress": "E-invoice Address",
     "billingEmail": "Billing Email",
+    "preferredLanguage": "Preferred Language",
+    "preferredLanguageHelp": "Language used for reports and default visit names for this customer. Independent from your own interface language.",
     "notes": "Notes",
     "deleteConfirm": "Are you sure you want to deactivate this customer?",
     "created": "Customer created successfully",

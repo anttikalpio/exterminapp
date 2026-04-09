@@ -89,6 +89,7 @@ export const customerRouter = router({
             billingCity: input.billingCity,
             billingEinvoiceAddress: input.billingEinvoiceAddress,
             billingEmail: input.billingEmail || null,
+            preferredLanguage: input.preferredLanguage,
             notes: input.notes,
           })
           .returning();
@@ -115,6 +116,7 @@ export const customerRouter = router({
             customerNumber: input.data.customerNumber || null,
             contactEmail: input.data.contactEmail || null,
             billingEmail: input.data.billingEmail || null,
+            preferredLanguage: input.data.preferredLanguage,
             updatedAt: new Date(),
           })
           .where(

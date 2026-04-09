@@ -61,6 +61,8 @@
     "billingCity": "Postitoimipaikka",
     "billingEinvoiceAddress": "Verkkolaskuosoite",
     "billingEmail": "Laskutuss\u00e4hk\u00f6posti",
+    "preferredLanguage": "Ensisijainen kieli",
+    "preferredLanguageHelp": "Kieli, jota k\u00e4ytet\u00e4\u00e4n t\u00e4m\u00e4n asiakkaan raporteissa ja k\u00e4yntien oletusnimiss\u00e4. Riippumaton oman k\u00e4ytt\u00f6liittym\u00e4si kielest\u00e4.",
     "notes": "Muistiinpanot",
     "deleteConfirm": "Haluatko varmasti poistaa t\u00e4m\u00e4n asiakkaan k\u00e4yt\u00f6st\u00e4?",
     "created": "Asiakas luotu onnistuneesti",
