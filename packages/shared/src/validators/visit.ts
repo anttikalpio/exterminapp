@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createVisitSchema = z.object({
-  siteId: z.string().uuid(),
+  workOrderId: z.string().uuid(),
   name: z.string().min(1).max(255).optional(),
   visitedAt: z.coerce.date().optional(),
   notes: z.string().optional(),

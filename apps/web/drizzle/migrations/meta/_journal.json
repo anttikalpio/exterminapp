@@ -43,6 +43,13 @@
       "when": 1775754993186,
       "tag": "0005_lovely_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775758364185,
+      "tag": "0006_romantic_glorian",
+      "breakpoints": true
     }
   ]
 }

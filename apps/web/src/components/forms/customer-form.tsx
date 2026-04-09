@@ -34,11 +34,23 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
   });
 
   const createMutation = trpc.customer.create.useMutation({
-    onSuccess: () => router.push("/customers"),
+    onSuccess: (customer) => {
+      if (customer?.id) {
+        router.push(`/customers/${customer.id}`);
+      } else {
+        router.push("/customers");
+      }
+    },
   });
 
   const updateMutation = trpc.customer.update.useMutation({
-    onSuccess: () => router.push("/customers"),
+    onSuccess: (customer) => {
+      if (customer?.id) {
+        router.push(`/customers/${customer.id}`);
+      } else {
+        router.push("/customers");
+      }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {

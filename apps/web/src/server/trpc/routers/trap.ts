@@ -1,11 +1,18 @@
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
 import { router, authedProcedure } from "../trpc";
-import { traps, sites, users, poisonAdditions } from "../../../../drizzle/schema";
+import {
+  traps,
+  workOrders,
+  sites,
+  customers,
+  users,
+  poisonAdditions,
+} from "../../../../drizzle/schema";
 
 export const trapRouter = router({
-  listBySite: authedProcedure
-    .input(z.object({ siteId: z.string().uuid() }))
+  listByWorkOrder: authedProcedure
+    .input(z.object({ workOrderId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       return ctx.db
         .select({
@@ -21,7 +28,7 @@ export const trapRouter = router({
         .from(traps)
         .where(
           and(
-            eq(traps.siteId, input.siteId),
+            eq(traps.workOrderId, input.workOrderId),
             eq(traps.tenantId, ctx.tenantId)
           )
         )
@@ -34,8 +41,13 @@ export const trapRouter = router({
       const [trap] = await ctx.db
         .select({
           id: traps.id,
-          siteId: traps.siteId,
+          workOrderId: traps.workOrderId,
+          workOrderTitle: workOrders.title,
+          workOrderNumber: workOrders.workOrderNumber,
+          siteId: workOrders.siteId,
           siteName: sites.name,
+          customerId: workOrders.customerId,
+          customerName: customers.businessName,
           label: traps.label,
           latitude: traps.latitude,
           longitude: traps.longitude,
@@ -47,7 +59,9 @@ export const trapRouter = router({
           createdAt: traps.createdAt,
         })
         .from(traps)
-        .innerJoin(sites, eq(traps.siteId, sites.id))
+        .innerJoin(workOrders, eq(traps.workOrderId, workOrders.id))
+        .innerJoin(sites, eq(workOrders.siteId, sites.id))
+        .innerJoin(customers, eq(workOrders.customerId, customers.id))
         .where(
           and(eq(traps.id, input.id), eq(traps.tenantId, ctx.tenantId))
         )
@@ -59,7 +73,7 @@ export const trapRouter = router({
   create: authedProcedure
     .input(
       z.object({
-        siteId: z.string().uuid(),
+        workOrderId: z.string().uuid(),
         label: z.string().min(1).max(50),
         latitude: z.number().min(-90).max(90),
         longitude: z.number().min(-180).max(180),
@@ -72,7 +86,7 @@ export const trapRouter = router({
         .insert(traps)
         .values({
           tenantId: ctx.tenantId,
-          siteId: input.siteId,
+          workOrderId: input.workOrderId,
           label: input.label,
           latitude: input.latitude.toString(),
           longitude: input.longitude.toString(),
@@ -194,5 +208,4 @@ export const trapRouter = router({
 
       return last ?? null;
     }),
-
 });

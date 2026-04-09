@@ -24,16 +24,17 @@ interface SiteFormProps {
     longitude?: string | null;
     notes?: string | null;
   };
+  presetCustomerId?: string;
 }
 
-export function SiteForm({ initialData }: SiteFormProps) {
+export function SiteForm({ initialData, presetCustomerId }: SiteFormProps) {
   const t = useTranslations("sites");
   const tc = useTranslations("common");
   const router = useRouter();
   const geo = useGeolocation();
 
   const [form, setForm] = useState({
-    customerId: initialData?.customerId ?? "",
+    customerId: initialData?.customerId ?? presetCustomerId ?? "",
     name: initialData?.name ?? "",
     address: initialData?.address ?? "",
     latitude: initialData?.latitude ?? "",
@@ -67,11 +68,23 @@ export function SiteForm({ initialData }: SiteFormProps) {
   const { data: customerOptions } = trpc.site.customerOptions.useQuery();
 
   const createMutation = trpc.site.create.useMutation({
-    onSuccess: (site) => router.push(`/sites/${site.id}`),
+    onSuccess: (site) => {
+      if (site?.customerId) {
+        router.push(`/customers/${site.customerId}`);
+      } else {
+        router.push("/sites");
+      }
+    },
   });
 
   const updateMutation = trpc.site.update.useMutation({
-    onSuccess: () => router.push(`/sites/${initialData?.id}`),
+    onSuccess: (site) => {
+      if (site?.id) {
+        router.push(`/sites/${site.id}`);
+      } else {
+        router.push("/sites");
+      }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {

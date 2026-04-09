@@ -4,8 +4,10 @@ import {
   users,
   customers,
   sites,
-  siteAssignments,
+  workOrders,
+  workOrderAssignments,
   traps,
+  visits,
   poisonAdditions,
   reports,
 } from "./schema";
@@ -17,7 +19,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, { fields: [users.tenantId], references: [tenants.id] }),
-  siteAssignments: many(siteAssignments),
+  workOrderAssignments: many(workOrderAssignments),
   poisonAdditions: many(poisonAdditions),
 }));
 
@@ -27,6 +29,8 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
     references: [tenants.id],
   }),
   sites: many(sites),
+  workOrders: many(workOrders),
+  reports: many(reports),
 }));
 
 export const sitesRelations = relations(sites, ({ one, many }) => ({
@@ -35,29 +39,61 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
     fields: [sites.customerId],
     references: [customers.id],
   }),
-  assignments: many(siteAssignments),
+  workOrders: many(workOrders),
+}));
+
+export const workOrdersRelations = relations(workOrders, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [workOrders.tenantId],
+    references: [tenants.id],
+  }),
+  customer: one(customers, {
+    fields: [workOrders.customerId],
+    references: [customers.id],
+  }),
+  site: one(sites, {
+    fields: [workOrders.siteId],
+    references: [sites.id],
+  }),
+  assignments: many(workOrderAssignments),
   traps: many(traps),
+  visits: many(visits),
   reports: many(reports),
 }));
 
-export const siteAssignmentsRelations = relations(
-  siteAssignments,
+export const workOrderAssignmentsRelations = relations(
+  workOrderAssignments,
   ({ one }) => ({
-    site: one(sites, {
-      fields: [siteAssignments.siteId],
-      references: [sites.id],
+    workOrder: one(workOrders, {
+      fields: [workOrderAssignments.workOrderId],
+      references: [workOrders.id],
     }),
     user: one(users, {
-      fields: [siteAssignments.userId],
+      fields: [workOrderAssignments.userId],
       references: [users.id],
     }),
   })
 );
 
 export const trapsRelations = relations(traps, ({ one, many }) => ({
-  site: one(sites, { fields: [traps.siteId], references: [sites.id] }),
+  workOrder: one(workOrders, {
+    fields: [traps.workOrderId],
+    references: [workOrders.id],
+  }),
   installedByUser: one(users, {
     fields: [traps.installedBy],
+    references: [users.id],
+  }),
+  poisonAdditions: many(poisonAdditions),
+}));
+
+export const visitsRelations = relations(visits, ({ one, many }) => ({
+  workOrder: one(workOrders, {
+    fields: [visits.workOrderId],
+    references: [workOrders.id],
+  }),
+  createdByUser: one(users, {
+    fields: [visits.createdBy],
     references: [users.id],
   }),
   poisonAdditions: many(poisonAdditions),
@@ -66,6 +102,10 @@ export const trapsRelations = relations(traps, ({ one, many }) => ({
 export const poisonAdditionsRelations = relations(
   poisonAdditions,
   ({ one }) => ({
+    visit: one(visits, {
+      fields: [poisonAdditions.visitId],
+      references: [visits.id],
+    }),
     trap: one(traps, {
       fields: [poisonAdditions.trapId],
       references: [traps.id],
@@ -78,7 +118,14 @@ export const poisonAdditionsRelations = relations(
 );
 
 export const reportsRelations = relations(reports, ({ one }) => ({
-  site: one(sites, { fields: [reports.siteId], references: [sites.id] }),
+  customer: one(customers, {
+    fields: [reports.customerId],
+    references: [customers.id],
+  }),
+  workOrder: one(workOrders, {
+    fields: [reports.workOrderId],
+    references: [workOrders.id],
+  }),
   generatedByUser: one(users, {
     fields: [reports.generatedBy],
     references: [users.id],

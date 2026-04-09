@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -20,6 +20,8 @@ export default function NewTrapPage({
   params: Promise<{ siteId: string }>;
 }) {
   const { siteId } = use(params);
+  const searchParams = useSearchParams();
+  const workOrderId = searchParams.get("workOrderId") ?? "";
   const t = useTranslations("traps");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -34,16 +36,23 @@ export default function NewTrapPage({
   });
 
   const { data: site } = trpc.site.getById.useQuery({ id: siteId });
-  const { data: existingTraps } = trpc.trap.listBySite.useQuery({ siteId });
+  const { data: existingTraps } = trpc.trap.listByWorkOrder.useQuery(
+    { workOrderId },
+    { enabled: !!workOrderId }
+  );
 
   const createMutation = trpc.trap.create.useMutation({
-    onSuccess: () => router.push(`/sites/${siteId}`),
+    onSuccess: () => {
+      if (workOrderId) router.push(`/work-orders/${workOrderId}`);
+      else router.push(`/sites/${siteId}`);
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!workOrderId) return;
     createMutation.mutate({
-      siteId,
+      workOrderId,
       label: form.label,
       latitude: parseFloat(form.latitude),
       longitude: parseFloat(form.longitude),
@@ -91,16 +100,14 @@ export default function NewTrapPage({
     <div>
       <div className="mb-6">
         <Link
-          href={`/sites/${siteId}`}
+          href={workOrderId ? `/work-orders/${workOrderId}` : `/sites/${siteId}`}
           className="mb-2 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
         >
           <ArrowLeft className="h-4 w-4" />
           {tc("back")}
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">{t("addTrap")}</h1>
-        {site && (
-          <p className="text-sm text-gray-500">{site.name}</p>
-        )}
+        {site && <p className="text-sm text-gray-500">{site.name}</p>}
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-4xl space-y-4">
@@ -217,7 +224,13 @@ export default function NewTrapPage({
               </button>
               <button
                 type="button"
-                onClick={() => router.push(`/sites/${siteId}`)}
+                onClick={() =>
+                  router.push(
+                    workOrderId
+                      ? `/work-orders/${workOrderId}`
+                      : `/sites/${siteId}`
+                  )
+                }
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 {tc("cancel")}

@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
-import { Users, UserCog, MapPin, Crosshair } from "lucide-react";
+import { Users, UserCog, MapPin, Briefcase, Crosshair } from "lucide-react";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -28,6 +28,12 @@ export default function DashboardPage() {
       color: "text-purple-600 bg-purple-50",
     },
     {
+      label: t("totalWorkOrders"),
+      value: stats?.workOrders ?? 0,
+      icon: Briefcase,
+      color: "text-amber-600 bg-amber-50",
+    },
+    {
       label: t("totalTraps"),
       value: stats?.traps ?? 0,
       icon: Crosshair,
@@ -39,7 +45,7 @@ export default function DashboardPage() {
     <div>
       <h1 className="mb-6 text-2xl font-bold text-gray-900">{t("title")}</h1>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
           <div
             key={card.label}

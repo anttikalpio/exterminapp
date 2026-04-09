@@ -34,7 +34,7 @@ export default function NewReportPage() {
 
   const [step, setStep] = useState(1);
   const [customerId, setCustomerId] = useState("");
-  const [siteId, setSiteId] = useState("");
+  const [workOrderId, setWorkOrderId] = useState("");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [title, setTitle] = useState("");
@@ -46,14 +46,16 @@ export default function NewReportPage() {
 
   // Data queries
   const { data: customers } = trpc.report.customerOptions.useQuery();
-  const { data: siteOptions } = trpc.report.siteOptions.useQuery(
+  const { data: workOrderOptions } = trpc.report.workOrderOptions.useQuery(
     { customerId },
     { enabled: !!customerId }
   );
   const { data: reportData, isLoading: dataLoading } =
-    trpc.report.getSiteReportData.useQuery(
-      { siteId, periodStart, periodEnd },
-      { enabled: !!siteId && !!periodStart && !!periodEnd && step === 3 }
+    trpc.report.getWorkOrderReportData.useQuery(
+      { workOrderId, periodStart, periodEnd },
+      {
+        enabled: !!workOrderId && !!periodStart && !!periodEnd && step === 3,
+      }
     );
 
   const createMutation = trpc.report.create.useMutation({
@@ -65,13 +67,13 @@ export default function NewReportPage() {
   });
 
   const selectedCustomer = customers?.find((c) => c.id === customerId);
-  const selectedSite = siteOptions?.find((s) => s.id === siteId);
+  const selectedWorkOrder = workOrderOptions?.find((w) => w.id === workOrderId);
 
   // Auto-generate title when moving to step 3
   const goToStep3 = () => {
-    if (!title && selectedCustomer && selectedSite) {
+    if (!title && selectedCustomer && selectedWorkOrder) {
       setTitle(
-        `${selectedSite.name} — ${periodStart} - ${periodEnd}`
+        `${selectedWorkOrder.title} — ${periodStart} - ${periodEnd}`
       );
     }
     setStep(3);
@@ -79,7 +81,8 @@ export default function NewReportPage() {
 
   const handleSave = (status: "draft" | "final") => {
     createMutation.mutate({
-      siteId,
+      customerId,
+      workOrderId: workOrderId || undefined,
       title,
       periodStart,
       periodEnd,
@@ -93,7 +96,7 @@ export default function NewReportPage() {
     setErrorMsg("");
     try {
       const params = new URLSearchParams({
-        siteId,
+        workOrderId,
         periodStart,
         periodEnd,
         title,
@@ -167,7 +170,7 @@ export default function NewReportPage() {
         ))}
       </div>
 
-      {/* Step 1: Customer & Site */}
+      {/* Step 1: Customer & Work Order */}
       {step === 1 && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <h2 className="mb-4 text-lg font-medium text-gray-900">
@@ -183,7 +186,7 @@ export default function NewReportPage() {
                 value={customerId}
                 onChange={(e) => {
                   setCustomerId(e.target.value);
-                  setSiteId("");
+                  setWorkOrderId("");
                 }}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
               >
@@ -199,22 +202,25 @@ export default function NewReportPage() {
             {customerId && (
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  {t("selectSite")}
+                  {t("selectWorkOrder")}
                 </label>
-                {siteOptions && siteOptions.length === 0 ? (
+                {workOrderOptions && workOrderOptions.length === 0 ? (
                   <p className="text-sm text-gray-500">
-                    {t("noSitesForCustomer")}
+                    {t("noWorkOrdersForCustomer")}
                   </p>
                 ) : (
                   <select
-                    value={siteId}
-                    onChange={(e) => setSiteId(e.target.value)}
+                    value={workOrderId}
+                    onChange={(e) => setWorkOrderId(e.target.value)}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
                   >
-                    <option value="">{t("selectSite")}...</option>
-                    {siteOptions?.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.address ? `— ${s.address}` : ""}
+                    <option value="">{t("selectWorkOrder")}...</option>
+                    {workOrderOptions?.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.title}
+                        {w.workOrderNumber ? ` (#${w.workOrderNumber})` : ""}
+                        {" — "}
+                        {w.siteName}
                       </option>
                     ))}
                   </select>
@@ -226,7 +232,7 @@ export default function NewReportPage() {
           <div className="mt-6 flex justify-end">
             <button
               onClick={() => setStep(2)}
-              disabled={!customerId || !siteId}
+              disabled={!customerId || !workOrderId}
               className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
             >
               {t("next")}
@@ -310,25 +316,48 @@ export default function NewReportPage() {
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium text-gray-500">{t("customer")}:</span>{" "}
-                <span className="text-gray-900">{selectedCustomer?.businessName}</span>
+                <span className="font-medium text-gray-500">
+                  {t("customer")}:
+                </span>{" "}
+                <span className="text-gray-900">
+                  {selectedCustomer?.businessName}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-500">
+                  {t("workOrder")}:
+                </span>{" "}
+                <span className="text-gray-900">
+                  {reportData?.workOrder.title ?? selectedWorkOrder?.title}
+                </span>
               </div>
               <div>
                 <span className="font-medium text-gray-500">{t("site")}:</span>{" "}
-                <span className="text-gray-900">{reportData?.site.name || selectedSite?.name}</span>
+                <span className="text-gray-900">
+                  {reportData?.workOrder.siteName ??
+                    selectedWorkOrder?.siteName}
+                </span>
               </div>
               <div>
-                <span className="font-medium text-gray-500">{t("periodStart")}:</span>{" "}
+                <span className="font-medium text-gray-500">
+                  {t("periodStart")}:
+                </span>{" "}
                 <span className="text-gray-900">{periodStart}</span>
               </div>
               <div>
-                <span className="font-medium text-gray-500">{t("periodEnd")}:</span>{" "}
+                <span className="font-medium text-gray-500">
+                  {t("periodEnd")}:
+                </span>{" "}
                 <span className="text-gray-900">{periodEnd}</span>
               </div>
-              {reportData?.site.address && (
+              {reportData?.workOrder.siteAddress && (
                 <div className="col-span-2">
-                  <span className="font-medium text-gray-500">{t("siteAddress")}:</span>{" "}
-                  <span className="text-gray-900">{reportData.site.address}</span>
+                  <span className="font-medium text-gray-500">
+                    {t("siteAddress")}:
+                  </span>{" "}
+                  <span className="text-gray-900">
+                    {reportData.workOrder.siteAddress}
+                  </span>
                 </div>
               )}
             </div>

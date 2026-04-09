@@ -97,7 +97,12 @@ export default function CustomersPage() {
                     {customer.customerNumber ?? "—"}
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    {customer.businessName}
+                    <Link
+                      href={`/customers/${customer.id}`}
+                      className="text-green-600 hover:text-green-700 hover:underline"
+                    >
+                      {customer.businessName}
+                    </Link>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {customer.contactName}
@@ -111,7 +116,7 @@ export default function CustomersPage() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Link
-                        href={`/customers/${customer.id}`}
+                        href={`/customers/${customer.id}/edit`}
                         className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                       >
                         <Pencil className="h-4 w-4" />

@@ -6,6 +6,7 @@ import { existsSync, readFileSync } from "fs";
 import { auth } from "@/server/auth";
 import { db } from "@/lib/db";
 import {
+  workOrders,
   sites,
   customers,
   traps,
@@ -33,41 +34,49 @@ async function handlePdfRequest(req: NextRequest) {
 
   const tenantId = session.user.tenantId;
   const { searchParams } = new URL(req.url);
-  const siteId = searchParams.get("siteId");
+  const workOrderId = searchParams.get("workOrderId");
   const periodStart = searchParams.get("periodStart");
   const periodEnd = searchParams.get("periodEnd");
   const title = searchParams.get("title") || "Report";
   const comments = searchParams.get("comments") || "";
 
-  if (!siteId || !periodStart || !periodEnd) {
+  if (!workOrderId || !periodStart || !periodEnd) {
     return NextResponse.json(
       { error: "Missing required parameters" },
       { status: 400 }
     );
   }
 
-  // Fetch site + customer
-  const [siteInfo] = await db
+  // Fetch work order + site + customer
+  const [workOrderInfo] = await db
     .select({
-      id: sites.id,
-      name: sites.name,
-      address: sites.address,
+      id: workOrders.id,
+      title: workOrders.title,
+      workOrderNumber: workOrders.workOrderNumber,
+      siteName: sites.name,
+      siteAddress: sites.address,
       customerName: customers.businessName,
       customerContact: customers.contactName,
       customerPhone: customers.contactPhone,
       customerEmail: customers.contactEmail,
     })
-    .from(sites)
-    .innerJoin(customers, eq(sites.customerId, customers.id))
-    .where(and(eq(sites.id, siteId), eq(sites.tenantId, tenantId)))
+    .from(workOrders)
+    .innerJoin(sites, eq(workOrders.siteId, sites.id))
+    .innerJoin(customers, eq(workOrders.customerId, customers.id))
+    .where(
+      and(eq(workOrders.id, workOrderId), eq(workOrders.tenantId, tenantId))
+    )
     .limit(1);
 
-  if (!siteInfo) {
-    return NextResponse.json({ error: "Site not found" }, { status: 404 });
+  if (!workOrderInfo) {
+    return NextResponse.json(
+      { error: "Work order not found" },
+      { status: 404 }
+    );
   }
 
-  // Fetch traps
-  const siteTraps = await db
+  // Fetch traps for this work order
+  const workOrderTraps = await db
     .select({
       id: traps.id,
       label: traps.label,
@@ -75,11 +84,13 @@ async function handlePdfRequest(req: NextRequest) {
       status: traps.status,
     })
     .from(traps)
-    .where(and(eq(traps.siteId, siteId), eq(traps.tenantId, tenantId)))
+    .where(
+      and(eq(traps.workOrderId, workOrderId), eq(traps.tenantId, tenantId))
+    )
     .orderBy(traps.label);
 
   // Fetch poison history within period
-  const trapIds = siteTraps.map((t) => t.id);
+  const trapIds = workOrderTraps.map((t) => t.id);
   let poisonHistory: Array<{
     id: string;
     trapLabel: string;
@@ -161,8 +172,17 @@ async function handlePdfRequest(req: NextRequest) {
       preparedBy={preparedBy}
       company={company ?? null}
       logoUrl={logoUrl}
-      site={siteInfo}
-      traps={siteTraps}
+      workOrder={{
+        title: workOrderInfo.title,
+        workOrderNumber: workOrderInfo.workOrderNumber,
+        siteName: workOrderInfo.siteName,
+        siteAddress: workOrderInfo.siteAddress,
+        customerName: workOrderInfo.customerName,
+        customerContact: workOrderInfo.customerContact,
+        customerPhone: workOrderInfo.customerPhone,
+        customerEmail: workOrderInfo.customerEmail,
+      }}
+      traps={workOrderTraps}
       poisonHistory={poisonHistory}
     />
   );

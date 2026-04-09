@@ -12,6 +12,7 @@ import {
   Users,
   UserCog,
   MapPin,
+  Briefcase,
   FileText,
   Settings,
   LogOut,
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/customers", icon: Users, labelKey: "customers" },
   { href: "/employees", icon: UserCog, labelKey: "employees" },
   { href: "/sites", icon: MapPin, labelKey: "sites" },
+  { href: "/work-orders", icon: Briefcase, labelKey: "workOrders" },
   { href: "/reports", icon: FileText, labelKey: "reports" },
   { href: "/settings", icon: Settings, labelKey: "settings" },
 ] as const;

@@ -4,3 +4,4 @@ export * from "./constants/trap-types";
 export * from "./validators/customer";
 export * from "./validators/employee";
 export * from "./validators/visit";
+export * from "./validators/work-order";

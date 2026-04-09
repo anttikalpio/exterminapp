@@ -65,7 +65,10 @@ export default function EditVisitPage({
 
   const { data: visit, isLoading, refetch: refetchVisit } =
     trpc.visit.getById.useQuery({ id: visitId });
-  const { data: trapList } = trpc.trap.listBySite.useQuery({ siteId });
+  const { data: trapList } = trpc.trap.listByWorkOrder.useQuery(
+    { workOrderId: visit?.workOrderId ?? "" },
+    { enabled: !!visit?.workOrderId }
+  );
   const { data: additions, refetch: refetchAdditions } =
     trpc.visit.poisonAdditions.useQuery({ visitId });
   const { data: lastAddition, refetch: refetchLast } =
@@ -172,7 +175,7 @@ export default function EditVisitPage({
     <div>
       <div className="mb-6">
         <Link
-          href={`/sites/${siteId}`}
+          href={visit.workOrderId ? `/work-orders/${visit.workOrderId}` : `/sites/${siteId}`}
           className="mb-2 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
         >
           <ArrowLeft className="h-4 w-4" />

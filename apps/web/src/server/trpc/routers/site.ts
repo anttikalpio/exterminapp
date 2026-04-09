@@ -1,13 +1,7 @@
 import { z } from "zod";
 import { eq, and, ilike, sql } from "drizzle-orm";
 import { router, adminProcedure, authedProcedure } from "../trpc";
-import {
-  sites,
-  customers,
-  siteAssignments,
-  users,
-  traps,
-} from "../../../../drizzle/schema";
+import { sites, customers, workOrders } from "../../../../drizzle/schema";
 
 export const siteRouter = router({
   list: adminProcedure
@@ -35,6 +29,12 @@ export const siteRouter = router({
         conditions.push(ilike(sites.name, `%${search}%`));
       }
 
+      const workOrderCountSql = sql<number>`(
+        SELECT COUNT(*)::int FROM ${workOrders}
+        WHERE ${workOrders.siteId} = ${sites.id}
+          AND ${workOrders.isActive} = true
+      )`;
+
       const [items, countResult] = await Promise.all([
         ctx.db
           .select({
@@ -45,6 +45,7 @@ export const siteRouter = router({
             longitude: sites.longitude,
             customerId: sites.customerId,
             customerName: customers.businessName,
+            workOrderCount: workOrderCountSql,
             isActive: sites.isActive,
             createdAt: sites.createdAt,
           })
@@ -61,6 +62,28 @@ export const siteRouter = router({
       ]);
 
       return { items, total: Number(countResult[0].count), page, pageSize };
+    }),
+
+  listByCustomer: authedProcedure
+    .input(z.object({ customerId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db
+        .select({
+          id: sites.id,
+          name: sites.name,
+          address: sites.address,
+          latitude: sites.latitude,
+          longitude: sites.longitude,
+        })
+        .from(sites)
+        .where(
+          and(
+            eq(sites.customerId, input.customerId),
+            eq(sites.tenantId, ctx.tenantId),
+            eq(sites.isActive, true)
+          )
+        )
+        .orderBy(sites.name);
     }),
 
   getById: authedProcedure
@@ -167,67 +190,7 @@ export const siteRouter = router({
       return site;
     }),
 
-  // Assignments
-  getAssignments: adminProcedure
-    .input(z.object({ siteId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db
-        .select({
-          id: siteAssignments.id,
-          userId: siteAssignments.userId,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          email: users.email,
-          assignedAt: siteAssignments.assignedAt,
-        })
-        .from(siteAssignments)
-        .innerJoin(users, eq(siteAssignments.userId, users.id))
-        .where(
-          and(
-            eq(siteAssignments.siteId, input.siteId),
-            eq(siteAssignments.tenantId, ctx.tenantId)
-          )
-        );
-    }),
-
-  assign: adminProcedure
-    .input(
-      z.object({
-        siteId: z.string().uuid(),
-        userId: z.string().uuid(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const [assignment] = await ctx.db
-        .insert(siteAssignments)
-        .values({
-          tenantId: ctx.tenantId,
-          siteId: input.siteId,
-          userId: input.userId,
-        })
-        .onConflictDoNothing()
-        .returning();
-
-      return assignment;
-    }),
-
-  unassign: adminProcedure
-    .input(z.object({ assignmentId: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      const [deleted] = await ctx.db
-        .delete(siteAssignments)
-        .where(
-          and(
-            eq(siteAssignments.id, input.assignmentId),
-            eq(siteAssignments.tenantId, ctx.tenantId)
-          )
-        )
-        .returning();
-
-      return deleted;
-    }),
-
-  // For customer dropdown
+  // For customer dropdown when creating a site.
   customerOptions: adminProcedure.query(async ({ ctx }) => {
     return ctx.db
       .select({ id: customers.id, businessName: customers.businessName })
@@ -239,25 +202,5 @@ export const siteRouter = router({
         )
       )
       .orderBy(customers.businessName);
-  }),
-
-  // Field tech employees for assignment
-  technicianOptions: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-      })
-      .from(users)
-      .where(
-        and(
-          eq(users.tenantId, ctx.tenantId),
-          eq(users.isActive, true),
-          eq(users.role, "field_technician")
-        )
-      )
-      .orderBy(users.lastName);
   }),
 });

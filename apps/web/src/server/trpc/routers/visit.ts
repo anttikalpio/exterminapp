@@ -5,6 +5,7 @@ import { router, authedProcedure } from "../trpc";
 import { throwFriendlyPgError } from "../pg-errors";
 import {
   visits,
+  workOrders,
   sites,
   traps,
   users,
@@ -33,9 +34,9 @@ function getIsoWeek(date: Date): number {
 }
 
 export const visitRouter = router({
-  // List visits for a given site, newest first.
-  listBySite: authedProcedure
-    .input(z.object({ siteId: z.string().uuid() }))
+  // List visits for a given work order, newest first.
+  listByWorkOrder: authedProcedure
+    .input(z.object({ workOrderId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const rows = await ctx.db
         .select({
@@ -54,7 +55,7 @@ export const visitRouter = router({
         .innerJoin(users, eq(visits.createdBy, users.id))
         .where(
           and(
-            eq(visits.siteId, input.siteId),
+            eq(visits.workOrderId, input.workOrderId),
             eq(visits.tenantId, ctx.tenantId)
           )
         )
@@ -69,7 +70,10 @@ export const visitRouter = router({
       const [visit] = await ctx.db
         .select({
           id: visits.id,
-          siteId: visits.siteId,
+          workOrderId: visits.workOrderId,
+          workOrderTitle: workOrders.title,
+          workOrderNumber: workOrders.workOrderNumber,
+          siteId: workOrders.siteId,
           siteName: sites.name,
           name: visits.name,
           visitedAt: visits.visitedAt,
@@ -79,7 +83,8 @@ export const visitRouter = router({
           createdByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
         })
         .from(visits)
-        .innerJoin(sites, eq(visits.siteId, sites.id))
+        .innerJoin(workOrders, eq(visits.workOrderId, workOrders.id))
+        .innerJoin(sites, eq(workOrders.siteId, sites.id))
         .innerJoin(users, eq(visits.createdBy, users.id))
         .where(
           and(eq(visits.id, input.id), eq(visits.tenantId, ctx.tenantId))
@@ -92,17 +97,23 @@ export const visitRouter = router({
   create: authedProcedure
     .input(createVisitSchema)
     .mutation(async ({ ctx, input }) => {
-      // Verify the site belongs to the caller's tenant.
-      const [site] = await ctx.db
-        .select({ id: sites.id })
-        .from(sites)
+      // Verify the work order belongs to the caller's tenant.
+      const [wo] = await ctx.db
+        .select({ id: workOrders.id })
+        .from(workOrders)
         .where(
-          and(eq(sites.id, input.siteId), eq(sites.tenantId, ctx.tenantId))
+          and(
+            eq(workOrders.id, input.workOrderId),
+            eq(workOrders.tenantId, ctx.tenantId)
+          )
         )
         .limit(1);
 
-      if (!site) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
+      if (!wo) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Work order not found",
+        });
       }
 
       const visitedAt = input.visitedAt ?? new Date();
@@ -113,7 +124,7 @@ export const visitRouter = router({
           .insert(visits)
           .values({
             tenantId: ctx.tenantId,
-            siteId: input.siteId,
+            workOrderId: input.workOrderId,
             name: input.name?.trim() || defaultName,
             visitedAt,
             createdBy: ctx.user.id,
@@ -218,9 +229,9 @@ export const visitRouter = router({
   addPoison: authedProcedure
     .input(addVisitPoisonSchema)
     .mutation(async ({ ctx, input }) => {
-      // Verify the visit exists in this tenant and get its site.
+      // Verify the visit exists in this tenant and get its work order.
       const [visit] = await ctx.db
-        .select({ id: visits.id, siteId: visits.siteId })
+        .select({ id: visits.id, workOrderId: visits.workOrderId })
         .from(visits)
         .where(
           and(eq(visits.id, input.visitId), eq(visits.tenantId, ctx.tenantId))
@@ -231,20 +242,20 @@ export const visitRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Visit not found" });
       }
 
-      // Verify the trap is at the same site so you can't smuggle a trap from
-      // another site into this visit's audit log.
+      // Verify the trap belongs to the same work order so you can't smuggle a
+      // trap from another work order into this visit's audit log.
       const [trap] = await ctx.db
-        .select({ id: traps.id, siteId: traps.siteId })
+        .select({ id: traps.id, workOrderId: traps.workOrderId })
         .from(traps)
         .where(
           and(eq(traps.id, input.trapId), eq(traps.tenantId, ctx.tenantId))
         )
         .limit(1);
 
-      if (!trap || trap.siteId !== visit.siteId) {
+      if (!trap || trap.workOrderId !== visit.workOrderId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Trap does not belong to this visit's site",
+          message: "Trap does not belong to this visit's work order",
         });
       }
 

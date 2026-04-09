@@ -22,7 +22,10 @@ export default function TrapDetailPage({
   const tc = useTranslations("common");
 
   const { data: trap, isLoading } = trpc.trap.getById.useQuery({ id: trapId });
-  const { data: allTraps } = trpc.trap.listBySite.useQuery({ siteId });
+  const { data: allTraps } = trpc.trap.listByWorkOrder.useQuery(
+    { workOrderId: trap?.workOrderId ?? "" },
+    { enabled: !!trap?.workOrderId }
+  );
   const { data: poisonHistory } = trpc.trap.poisonHistory.useQuery({ trapId });
 
   const updateStatusMutation = trpc.trap.update.useMutation({
@@ -82,7 +85,7 @@ export default function TrapDetailPage({
     <div>
       <div className="mb-6">
         <Link
-          href={`/sites/${siteId}`}
+          href={trap.workOrderId ? `/work-orders/${trap.workOrderId}` : `/sites/${siteId}`}
           className="mb-2 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
         >
           <ArrowLeft className="h-4 w-4" />

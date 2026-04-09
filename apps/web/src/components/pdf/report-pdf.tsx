@@ -42,9 +42,11 @@ export type ReportPdfProps = {
   preparedBy: string;
   company: Company | null;
   logoUrl?: string;
-  site: {
-    name: string;
-    address: string | null;
+  workOrder: {
+    title: string;
+    workOrderNumber: string | null;
+    siteName: string;
+    siteAddress: string | null;
     customerName: string;
     customerContact: string | null;
     customerPhone: string | null;
@@ -183,7 +185,7 @@ export function ReportPdf({
   preparedBy,
   company,
   logoUrl,
-  site,
+  workOrder,
   traps,
   poisonHistory,
 }: ReportPdfProps) {
@@ -223,34 +225,45 @@ export function ReportPdf({
           {periodStart} — {periodEnd}
         </Text>
 
-        {/* Customer & Site Info */}
+        {/* Customer, Site & Work Order */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Customer & Site</Text>
+          <Text style={styles.sectionTitle}>Customer, Site & Work Order</Text>
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Customer</Text>
-              <Text style={styles.infoValue}>{site.customerName}</Text>
+              <Text style={styles.infoValue}>{workOrder.customerName}</Text>
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Site</Text>
-              <Text style={styles.infoValue}>{site.name}</Text>
+              <Text style={styles.infoValue}>{workOrder.siteName}</Text>
             </View>
-            {site.customerContact && (
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Work order</Text>
+              <Text style={styles.infoValue}>
+                {workOrder.title}
+                {workOrder.workOrderNumber
+                  ? ` (#${workOrder.workOrderNumber})`
+                  : ""}
+              </Text>
+            </View>
+            {workOrder.customerContact && (
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Contact</Text>
-                <Text style={styles.infoValue}>{site.customerContact}</Text>
+                <Text style={styles.infoValue}>
+                  {workOrder.customerContact}
+                </Text>
               </View>
             )}
-            {site.customerPhone && (
+            {workOrder.customerPhone && (
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Phone</Text>
-                <Text style={styles.infoValue}>{site.customerPhone}</Text>
+                <Text style={styles.infoValue}>{workOrder.customerPhone}</Text>
               </View>
             )}
-            {site.address && (
+            {workOrder.siteAddress && (
               <View style={{ width: "100%", marginTop: 4 }}>
                 <Text style={styles.infoLabel}>Site address</Text>
-                <Text style={styles.infoValue}>{site.address}</Text>
+                <Text style={styles.infoValue}>{workOrder.siteAddress}</Text>
               </View>
             )}
           </View>
@@ -283,7 +296,7 @@ export function ReportPdf({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Trap Summary</Text>
           {traps.length === 0 ? (
-            <Text style={styles.empty}>No traps at this site</Text>
+            <Text style={styles.empty}>No traps on this work order</Text>
           ) : (
             <View style={styles.table}>
               <View style={styles.tableHeader}>

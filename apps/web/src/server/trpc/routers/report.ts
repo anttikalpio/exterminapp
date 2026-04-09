@@ -3,6 +3,7 @@ import { eq, and, sql, gte, lte, desc, inArray } from "drizzle-orm";
 import { router, adminProcedure } from "../trpc";
 import {
   reports,
+  workOrders,
   sites,
   customers,
   traps,
@@ -28,16 +29,19 @@ export const reportRouter = router({
           .select({
             id: reports.id,
             title: reports.title,
+            reportType: reports.reportType,
             periodStart: reports.periodStart,
             periodEnd: reports.periodEnd,
             status: reports.status,
-            siteName: sites.name,
+            customerId: reports.customerId,
             customerName: customers.businessName,
+            workOrderId: reports.workOrderId,
+            workOrderTitle: workOrders.title,
             createdAt: reports.createdAt,
           })
           .from(reports)
-          .innerJoin(sites, eq(reports.siteId, sites.id))
-          .innerJoin(customers, eq(sites.customerId, customers.id))
+          .innerJoin(customers, eq(reports.customerId, customers.id))
+          .leftJoin(workOrders, eq(reports.workOrderId, workOrders.id))
           .where(eq(reports.tenantId, ctx.tenantId))
           .orderBy(desc(reports.createdAt))
           .limit(pageSize)
@@ -58,22 +62,28 @@ export const reportRouter = router({
         .select({
           id: reports.id,
           title: reports.title,
+          reportType: reports.reportType,
           periodStart: reports.periodStart,
           periodEnd: reports.periodEnd,
           status: reports.status,
           summary: reports.summary,
-          siteId: reports.siteId,
-          siteName: sites.name,
-          siteAddress: sites.address,
+          customerId: reports.customerId,
           customerName: customers.businessName,
           customerContact: customers.contactName,
           customerPhone: customers.contactPhone,
           customerEmail: customers.contactEmail,
+          workOrderId: reports.workOrderId,
+          workOrderTitle: workOrders.title,
+          workOrderNumber: workOrders.workOrderNumber,
+          siteId: workOrders.siteId,
+          siteName: sites.name,
+          siteAddress: sites.address,
           createdAt: reports.createdAt,
         })
         .from(reports)
-        .innerJoin(sites, eq(reports.siteId, sites.id))
-        .innerJoin(customers, eq(sites.customerId, customers.id))
+        .innerJoin(customers, eq(reports.customerId, customers.id))
+        .leftJoin(workOrders, eq(reports.workOrderId, workOrders.id))
+        .leftJoin(sites, eq(workOrders.siteId, sites.id))
         .where(
           and(eq(reports.id, input.id), eq(reports.tenantId, ctx.tenantId))
         )
@@ -82,40 +92,53 @@ export const reportRouter = router({
       return report ?? null;
     }),
 
-  // Get site data for report preview: traps + poison history within timeframe
-  getSiteReportData: adminProcedure
+  // Gather preview data for a work-order-scoped report: site info, traps,
+  // and poison history within the timeframe.
+  getWorkOrderReportData: adminProcedure
     .input(
       z.object({
-        siteId: z.string().uuid(),
+        workOrderId: z.string().uuid(),
         periodStart: z.string(), // ISO date string YYYY-MM-DD
         periodEnd: z.string(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const { siteId, periodStart, periodEnd } = input;
+      const { workOrderId, periodStart, periodEnd } = input;
 
-      // Get site + customer info
-      const [siteInfo] = await ctx.db
+      // Work order + site + customer info
+      const [workOrderInfo] = await ctx.db
         .select({
-          id: sites.id,
-          name: sites.name,
-          address: sites.address,
+          id: workOrders.id,
+          title: workOrders.title,
+          workOrderNumber: workOrders.workOrderNumber,
+          description: workOrders.description,
+          status: workOrders.status,
+          startDate: workOrders.startDate,
+          endDate: workOrders.endDate,
+          siteId: workOrders.siteId,
+          siteName: sites.name,
+          siteAddress: sites.address,
+          customerId: workOrders.customerId,
           customerName: customers.businessName,
           customerContact: customers.contactName,
           customerPhone: customers.contactPhone,
           customerEmail: customers.contactEmail,
         })
-        .from(sites)
-        .innerJoin(customers, eq(sites.customerId, customers.id))
+        .from(workOrders)
+        .innerJoin(sites, eq(workOrders.siteId, sites.id))
+        .innerJoin(customers, eq(workOrders.customerId, customers.id))
         .where(
-          and(eq(sites.id, siteId), eq(sites.tenantId, ctx.tenantId))
+          and(
+            eq(workOrders.id, workOrderId),
+            eq(workOrders.tenantId, ctx.tenantId)
+          )
         )
         .limit(1);
 
-      if (!siteInfo) return null;
+      if (!workOrderInfo) return null;
 
-      // Get all traps for the site
-      const siteTraps = await ctx.db
+      // Get all traps for this work order
+      const workOrderTraps = await ctx.db
         .select({
           id: traps.id,
           label: traps.label,
@@ -126,12 +149,15 @@ export const reportRouter = router({
         })
         .from(traps)
         .where(
-          and(eq(traps.siteId, siteId), eq(traps.tenantId, ctx.tenantId))
+          and(
+            eq(traps.workOrderId, workOrderId),
+            eq(traps.tenantId, ctx.tenantId)
+          )
         )
         .orderBy(traps.label);
 
-      // Get poison additions within timeframe for all traps at this site
-      const trapIds = siteTraps.map((t) => t.id);
+      // Get poison additions within timeframe for all traps in this work order
+      const trapIds = workOrderTraps.map((t) => t.id);
       let poisonHistory: Array<{
         id: string;
         trapId: string;
@@ -176,8 +202,8 @@ export const reportRouter = router({
       }
 
       return {
-        site: siteInfo,
-        traps: siteTraps,
+        workOrder: workOrderInfo,
+        traps: workOrderTraps,
         poisonHistory,
       };
     }),
@@ -203,7 +229,9 @@ export const reportRouter = router({
   create: adminProcedure
     .input(
       z.object({
-        siteId: z.string().uuid(),
+        customerId: z.string().uuid(),
+        workOrderId: z.string().uuid().optional(),
+        reportType: z.string().min(1).max(50).default("work_order_summary"),
         title: z.string().min(1).max(255),
         periodStart: z.string(),
         periodEnd: z.string(),
@@ -212,11 +240,31 @@ export const reportRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // If a work order is specified, verify it belongs to the customer.
+      if (input.workOrderId) {
+        const [wo] = await ctx.db
+          .select({ customerId: workOrders.customerId })
+          .from(workOrders)
+          .where(
+            and(
+              eq(workOrders.id, input.workOrderId),
+              eq(workOrders.tenantId, ctx.tenantId)
+            )
+          )
+          .limit(1);
+
+        if (!wo || wo.customerId !== input.customerId) {
+          throw new Error("Work order does not belong to the selected customer");
+        }
+      }
+
       const [report] = await ctx.db
         .insert(reports)
         .values({
           tenantId: ctx.tenantId,
-          siteId: input.siteId,
+          customerId: input.customerId,
+          workOrderId: input.workOrderId ?? null,
+          reportType: input.reportType,
           generatedBy: ctx.user.id,
           title: input.title,
           periodStart: input.periodStart,
@@ -284,20 +332,27 @@ export const reportRouter = router({
       .orderBy(customers.businessName);
   }),
 
-  // Sites for a given customer
-  siteOptions: adminProcedure
+  // Work orders for a given customer
+  workOrderOptions: adminProcedure
     .input(z.object({ customerId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       return ctx.db
-        .select({ id: sites.id, name: sites.name, address: sites.address })
-        .from(sites)
+        .select({
+          id: workOrders.id,
+          title: workOrders.title,
+          workOrderNumber: workOrders.workOrderNumber,
+          status: workOrders.status,
+          siteName: sites.name,
+        })
+        .from(workOrders)
+        .innerJoin(sites, eq(workOrders.siteId, sites.id))
         .where(
           and(
-            eq(sites.tenantId, ctx.tenantId),
-            eq(sites.customerId, input.customerId),
-            eq(sites.isActive, true)
+            eq(workOrders.tenantId, ctx.tenantId),
+            eq(workOrders.customerId, input.customerId),
+            eq(workOrders.isActive, true)
           )
         )
-        .orderBy(sites.name);
+        .orderBy(desc(workOrders.createdAt));
     }),
 });

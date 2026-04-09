@@ -120,25 +120,69 @@ export const sites = pgTable(
 );
 
 // ============================================================
-// SITE ASSIGNMENTS
+// WORK ORDERS
+// A unit of pest-control work under a customer, performed at a site.
+// A customer can have many work orders; one site can host multiple
+// concurrent work orders (e.g. a rat program and a cockroach program).
 // ============================================================
-export const siteAssignments = pgTable(
-  "site_assignments",
+export const workOrders = pgTable(
+  "work_orders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customers.id),
     siteId: uuid("site_id")
       .notNull()
       .references(() => sites.id),
+    workOrderNumber: varchar("work_order_number", { length: 50 }),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    startDate: date("start_date"),
+    endDate: date("end_date"),
+    notes: text("notes"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("work_orders_tenant_idx").on(table.tenantId),
+    index("work_orders_customer_idx").on(table.customerId),
+    index("work_orders_site_idx").on(table.siteId),
+    uniqueIndex("work_orders_tenant_number_idx").on(
+      table.tenantId,
+      table.workOrderNumber
+    ),
+  ]
+);
+
+// ============================================================
+// WORK ORDER ASSIGNMENTS
+// ============================================================
+export const workOrderAssignments = pgTable(
+  "work_order_assignments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    workOrderId: uuid("work_order_id")
+      .notNull()
+      .references(() => workOrders.id),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id),
     assignedAt: timestamp("assigned_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("site_assignments_site_user_idx").on(table.siteId, table.userId),
+    uniqueIndex("work_order_assignments_wo_user_idx").on(
+      table.workOrderId,
+      table.userId
+    ),
   ]
 );
 
@@ -152,9 +196,9 @@ export const traps = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    siteId: uuid("site_id")
+    workOrderId: uuid("work_order_id")
       .notNull()
-      .references(() => sites.id),
+      .references(() => workOrders.id),
     label: varchar("label", { length: 50 }).notNull(),
     latitude: decimal("latitude", { precision: 10, scale: 7 }).notNull(),
     longitude: decimal("longitude", { precision: 10, scale: 7 }).notNull(),
@@ -168,12 +212,12 @@ export const traps = pgTable(
   },
   (table) => [
     index("traps_tenant_idx").on(table.tenantId),
-    index("traps_site_idx").on(table.siteId),
+    index("traps_work_order_idx").on(table.workOrderId),
   ]
 );
 
 // ============================================================
-// VISITS (service visits to a site)
+// VISITS (service visits during a work order)
 // ============================================================
 export const visits = pgTable(
   "visits",
@@ -182,9 +226,9 @@ export const visits = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    siteId: uuid("site_id")
+    workOrderId: uuid("work_order_id")
       .notNull()
-      .references(() => sites.id),
+      .references(() => workOrders.id),
     name: varchar("name", { length: 255 }).notNull(),
     visitedAt: timestamp("visited_at", { withTimezone: true }).notNull().defaultNow(),
     createdBy: uuid("created_by")
@@ -196,7 +240,7 @@ export const visits = pgTable(
   },
   (table) => [
     index("visits_tenant_idx").on(table.tenantId),
-    index("visits_site_idx").on(table.siteId),
+    index("visits_work_order_idx").on(table.workOrderId),
     index("visits_visited_at_idx").on(table.visitedAt),
   ]
 );
@@ -240,6 +284,10 @@ export const poisonAdditions = pgTable(
 
 // ============================================================
 // REPORTS
+// Reports are customer-scoped. Most reports focus on a single work
+// order (report_type = 'work_order_summary', work_order_id set), but
+// future report types aggregate across all of a customer's data
+// (work_order_id left null).
 // ============================================================
 export const reports = pgTable(
   "reports",
@@ -248,9 +296,13 @@ export const reports = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    siteId: uuid("site_id")
+    customerId: uuid("customer_id")
       .notNull()
-      .references(() => sites.id),
+      .references(() => customers.id),
+    workOrderId: uuid("work_order_id").references(() => workOrders.id),
+    reportType: varchar("report_type", { length: 50 })
+      .notNull()
+      .default("work_order_summary"),
     generatedBy: uuid("generated_by")
       .notNull()
       .references(() => users.id),
@@ -264,6 +316,7 @@ export const reports = pgTable(
   },
   (table) => [
     index("reports_tenant_idx").on(table.tenantId),
-    index("reports_site_idx").on(table.siteId),
+    index("reports_customer_idx").on(table.customerId),
+    index("reports_work_order_idx").on(table.workOrderId),
   ]
 );
