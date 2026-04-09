@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const createCustomerSchema = z.object({
+  customerNumber: z.string().max(50).optional(),
   businessName: z.string().min(1).max(255),
   contactName: z.string().max(255).optional(),
   contactEmail: z.string().email().max(255).optional().or(z.literal("")),

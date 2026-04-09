@@ -29,6 +29,13 @@
       "when": 1775747448062,
       "tag": "0003_bright_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775753410154,
+      "tag": "0004_third_madame_hydra",
+      "breakpoints": true
     }
   ]
 }

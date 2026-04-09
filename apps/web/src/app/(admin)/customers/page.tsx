@@ -58,6 +58,9 @@ export default function CustomersPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                {t("customerNumber")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 {t("businessName")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -77,19 +80,22 @@ export default function CustomersPage() {
           <tbody className="divide-y divide-gray-200">
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                   {tc("loading")}
                 </td>
               </tr>
             ) : data?.items.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                   {tc("noResults")}
                 </td>
               </tr>
             ) : (
               data?.items.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm text-gray-600 font-mono">
+                    {customer.customerNumber ?? "—"}
+                  </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
                     {customer.businessName}
                   </td>

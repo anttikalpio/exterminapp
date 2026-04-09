@@ -45,6 +45,7 @@ export default function EditCustomerPage({
       <CustomerForm
         initialData={{
           id: customer.id,
+          customerNumber: customer.customerNumber ?? "",
           businessName: customer.businessName,
           contactName: customer.contactName ?? "",
           contactEmail: customer.contactEmail ?? "",

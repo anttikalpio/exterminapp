@@ -77,6 +77,7 @@ export const customerRouter = router({
           .insert(customers)
           .values({
             tenantId: ctx.tenantId,
+            customerNumber: input.customerNumber || null,
             businessName: input.businessName,
             contactName: input.contactName,
             contactEmail: input.contactEmail || null,
@@ -106,6 +107,7 @@ export const customerRouter = router({
           .update(customers)
           .set({
             ...input.data,
+            customerNumber: input.data.customerNumber || null,
             contactEmail: input.data.contactEmail || null,
             billingEmail: input.data.billingEmail || null,
             updatedAt: new Date(),

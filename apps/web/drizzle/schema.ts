@@ -65,6 +65,7 @@ export const customers = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
+    customerNumber: varchar("customer_number", { length: 50 }),
     businessName: varchar("business_name", { length: 255 }).notNull(),
     contactName: varchar("contact_name", { length: 255 }),
     contactEmail: varchar("contact_email", { length: 255 }),
@@ -76,7 +77,13 @@ export const customers = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("customers_tenant_idx").on(table.tenantId)]
+  (table) => [
+    index("customers_tenant_idx").on(table.tenantId),
+    uniqueIndex("customers_tenant_number_idx").on(
+      table.tenantId,
+      table.customerNumber
+    ),
+  ]
 );
 
 // ============================================================

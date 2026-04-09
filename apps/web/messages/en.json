@@ -40,6 +40,7 @@
     "title": "Customers",
     "addCustomer": "Add Customer",
     "editCustomer": "Edit Customer",
+    "customerNumber": "Customer No.",
     "businessName": "Business Name",
     "contactName": "Contact Name",
     "contactEmail": "Contact Email",

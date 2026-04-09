@@ -18,6 +18,7 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
   const bannerRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState<CreateCustomerInput>({
+    customerNumber: initialData?.customerNumber ?? "",
     businessName: initialData?.businessName ?? "",
     contactName: initialData?.contactName ?? "",
     contactEmail: initialData?.contactEmail ?? "",
@@ -92,22 +93,40 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
         </div>
       )}
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          {t("businessName")} *
-        </label>
-        <input
-          type="text"
-          required
-          value={form.businessName}
-          onChange={(e) => updateField("businessName", e.target.value)}
-          className={inputClass("businessName")}
-        />
-        {getFieldError("businessName") && (
-          <p className="mt-1 text-xs text-red-600">
-            {getFieldError("businessName")}
-          </p>
-        )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[200px_1fr]">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            {t("customerNumber")}
+          </label>
+          <input
+            type="text"
+            value={form.customerNumber ?? ""}
+            onChange={(e) => updateField("customerNumber", e.target.value)}
+            className={inputClass("customerNumber")}
+          />
+          {getFieldError("customerNumber") && (
+            <p className="mt-1 text-xs text-red-600">
+              {getFieldError("customerNumber")}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            {t("businessName")} *
+          </label>
+          <input
+            type="text"
+            required
+            value={form.businessName}
+            onChange={(e) => updateField("businessName", e.target.value)}
+            className={inputClass("businessName")}
+          />
+          {getFieldError("businessName") && (
+            <p className="mt-1 text-xs text-red-600">
+              {getFieldError("businessName")}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
