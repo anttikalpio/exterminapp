@@ -71,6 +71,9 @@ export const customers = pgTable(
     contactPhone: varchar("contact_phone", { length: 30 }),
     billingAddress: text("billing_address"),
     billingEmail: varchar("billing_email", { length: 255 }),
+    preferredLanguage: varchar("preferred_language", { length: 5 })
+      .notNull()
+      .default("en"),
     notes: text("notes"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

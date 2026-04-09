@@ -46,6 +46,7 @@
     "contactPhone": "Contact Phone",
     "billingAddress": "Billing Address",
     "billingEmail": "Billing Email",
+    "preferredLanguage": "Preferred Language",
     "notes": "Notes",
     "deleteConfirm": "Are you sure you want to deactivate this customer?",
     "created": "Customer created successfully",

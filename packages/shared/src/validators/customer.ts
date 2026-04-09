@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export const SUPPORTED_LOCALES = ["en", "fi"] as const;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+export const localeSchema = z.enum(SUPPORTED_LOCALES);
+
 export const createCustomerSchema = z.object({
   businessName: z.string().min(1).max(255),
   contactName: z.string().max(255).optional(),
@@ -7,6 +11,7 @@ export const createCustomerSchema = z.object({
   contactPhone: z.string().max(30).optional(),
   billingAddress: z.string().optional(),
   billingEmail: z.string().email().max(255).optional().or(z.literal("")),
+  preferredLanguage: localeSchema.optional(),
   notes: z.string().optional(),
 });
 

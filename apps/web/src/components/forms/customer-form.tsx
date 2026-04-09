@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import type { CreateCustomerInput } from "@exterminapp/shared";
+import { SUPPORTED_LOCALES } from "@exterminapp/shared";
 import { AlertCircle } from "lucide-react";
+
+// Display labels for the language dropdown. Kept inline since this is a
+// short, static list — no need to round-trip through next-intl.
+const LANGUAGE_LABELS: Record<(typeof SUPPORTED_LOCALES)[number], string> = {
+  en: "English",
+  fi: "Suomi",
+};
 
 interface CustomerFormProps {
   initialData?: CreateCustomerInput & { id: string };
@@ -24,6 +32,7 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
     contactPhone: initialData?.contactPhone ?? "",
     billingAddress: initialData?.billingAddress ?? "",
     billingEmail: initialData?.billingEmail ?? "",
+    preferredLanguage: initialData?.preferredLanguage ?? "en",
     notes: initialData?.notes ?? "",
   });
 
@@ -193,6 +202,34 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
         {getFieldError("billingAddress") && (
           <p className="mt-1 text-xs text-red-600">
             {getFieldError("billingAddress")}
+          </p>
+        )}
+      </div>
+
+      <div className="max-w-xs">
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          {t("preferredLanguage")}
+        </label>
+        <select
+          value={form.preferredLanguage ?? "en"}
+          onChange={(e) =>
+            setForm((prev) => ({
+              ...prev,
+              preferredLanguage: e.target
+                .value as (typeof SUPPORTED_LOCALES)[number],
+            }))
+          }
+          className={inputClass("preferredLanguage")}
+        >
+          {SUPPORTED_LOCALES.map((locale) => (
+            <option key={locale} value={locale}>
+              {LANGUAGE_LABELS[locale]}
+            </option>
+          ))}
+        </select>
+        {getFieldError("preferredLanguage") && (
+          <p className="mt-1 text-xs text-red-600">
+            {getFieldError("preferredLanguage")}
           </p>
         )}
       </div>

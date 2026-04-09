@@ -83,6 +83,7 @@ export const customerRouter = router({
             contactPhone: input.contactPhone,
             billingAddress: input.billingAddress,
             billingEmail: input.billingEmail || null,
+            preferredLanguage: input.preferredLanguage ?? "en",
             notes: input.notes,
           })
           .returning();
