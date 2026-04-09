@@ -244,7 +244,7 @@ export default function NewTrapPage({
             </p>
             <SiteMap
               center={siteCenter}
-              fitRadiusMeters={500}
+              fitRadiusMeters={site?.serviceRadiusMeters ?? 200}
               traps={existingTraps ?? []}
               onMapClick={handleMapClick}
               showClickMarker={clickMarker}

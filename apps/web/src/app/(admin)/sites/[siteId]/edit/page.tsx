@@ -41,6 +41,7 @@ export default function EditSitePage({
           address: site.address ?? "",
           latitude: site.latitude,
           longitude: site.longitude,
+          serviceRadiusMeters: site.serviceRadiusMeters,
           notes: site.notes,
         }}
       />

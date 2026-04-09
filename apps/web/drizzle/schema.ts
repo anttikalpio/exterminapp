@@ -8,6 +8,7 @@ import {
   jsonb,
   decimal,
   date,
+  integer,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
@@ -108,6 +109,9 @@ export const sites = pgTable(
     address: text("address"),
     latitude: decimal("latitude", { precision: 10, scale: 7 }),
     longitude: decimal("longitude", { precision: 10, scale: 7 }),
+    // Radius in meters that the "add trap" map is zoomed to and that
+    // defines the nominal service area for this site. Adjustable per site.
+    serviceRadiusMeters: integer("service_radius_meters").notNull().default(200),
     notes: text("notes"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

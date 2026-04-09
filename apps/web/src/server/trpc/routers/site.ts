@@ -74,6 +74,7 @@ export const siteRouter = router({
           address: sites.address,
           latitude: sites.latitude,
           longitude: sites.longitude,
+          serviceRadiusMeters: sites.serviceRadiusMeters,
         })
         .from(sites)
         .where(
@@ -96,6 +97,7 @@ export const siteRouter = router({
           address: sites.address,
           latitude: sites.latitude,
           longitude: sites.longitude,
+          serviceRadiusMeters: sites.serviceRadiusMeters,
           notes: sites.notes,
           customerId: sites.customerId,
           customerName: customers.businessName,
@@ -120,6 +122,7 @@ export const siteRouter = router({
         address: z.string().optional(),
         latitude: z.number().min(-90).max(90).optional(),
         longitude: z.number().min(-180).max(180).optional(),
+        serviceRadiusMeters: z.number().int().min(10).max(10000).optional(),
         notes: z.string().optional(),
       })
     )
@@ -133,6 +136,7 @@ export const siteRouter = router({
           address: input.address,
           latitude: input.latitude?.toString(),
           longitude: input.longitude?.toString(),
+          serviceRadiusMeters: input.serviceRadiusMeters,
           notes: input.notes,
         })
         .returning();
@@ -149,6 +153,7 @@ export const siteRouter = router({
           address: z.string().optional(),
           latitude: z.number().min(-90).max(90).optional().nullable(),
           longitude: z.number().min(-180).max(180).optional().nullable(),
+          serviceRadiusMeters: z.number().int().min(10).max(10000).optional(),
           notes: z.string().optional(),
         }),
       })

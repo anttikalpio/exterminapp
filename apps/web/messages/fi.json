@@ -106,6 +106,8 @@
     "selectCustomer": "Valitse asiakas...",
     "latitude": "Leveysaste",
     "longitude": "Pituusaste",
+    "serviceRadius": "Palvelualueen säde (metriä)",
+    "serviceRadiusHelp": "Määrittää uusia ansoja lisättäessä näytettävän kartta-alueen.",
     "notes": "Muistiinpanot",
     "workOrders": "T\u00e4m\u00e4n kohteen ty\u00f6tilaukset",
     "workOrderCount": "{count} ty\u00f6tilausta",

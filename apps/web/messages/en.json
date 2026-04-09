@@ -106,6 +106,8 @@
     "selectCustomer": "Select customer...",
     "latitude": "Latitude",
     "longitude": "Longitude",
+    "serviceRadius": "Service radius (meters)",
+    "serviceRadiusHelp": "Defines the map extent shown when adding new traps at this site.",
     "workOrders": "Work Orders at this site",
     "workOrderCount": "{count} work orders",
     "noWorkOrders": "No active work orders at this site",

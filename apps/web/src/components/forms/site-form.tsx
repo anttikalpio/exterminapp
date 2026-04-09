@@ -22,10 +22,13 @@ interface SiteFormProps {
     address?: string;
     latitude?: string | null;
     longitude?: string | null;
+    serviceRadiusMeters?: number | null;
     notes?: string | null;
   };
   presetCustomerId?: string;
 }
+
+const DEFAULT_SERVICE_RADIUS_METERS = 200;
 
 export function SiteForm({ initialData, presetCustomerId }: SiteFormProps) {
   const t = useTranslations("sites");
@@ -39,6 +42,9 @@ export function SiteForm({ initialData, presetCustomerId }: SiteFormProps) {
     address: initialData?.address ?? "",
     latitude: initialData?.latitude ?? "",
     longitude: initialData?.longitude ?? "",
+    serviceRadiusMeters:
+      initialData?.serviceRadiusMeters?.toString() ??
+      DEFAULT_SERVICE_RADIUS_METERS.toString(),
     notes: initialData?.notes ?? "",
   });
 
@@ -91,6 +97,11 @@ export function SiteForm({ initialData, presetCustomerId }: SiteFormProps) {
     e.preventDefault();
     const lat = form.latitude ? parseFloat(form.latitude) : undefined;
     const lng = form.longitude ? parseFloat(form.longitude) : undefined;
+    const parsedRadius = parseInt(form.serviceRadiusMeters, 10);
+    const serviceRadiusMeters =
+      Number.isFinite(parsedRadius) && parsedRadius > 0
+        ? parsedRadius
+        : DEFAULT_SERVICE_RADIUS_METERS;
 
     if (initialData?.id) {
       updateMutation.mutate({
@@ -100,6 +111,7 @@ export function SiteForm({ initialData, presetCustomerId }: SiteFormProps) {
           address: form.address || undefined,
           latitude: lat,
           longitude: lng,
+          serviceRadiusMeters,
           notes: form.notes || undefined,
         },
       });
@@ -110,6 +122,7 @@ export function SiteForm({ initialData, presetCustomerId }: SiteFormProps) {
         address: form.address || undefined,
         latitude: lat,
         longitude: lng,
+        serviceRadiusMeters,
         notes: form.notes || undefined,
       });
     }
@@ -280,6 +293,29 @@ export function SiteForm({ initialData, presetCustomerId }: SiteFormProps) {
             <MapPin className="h-4 w-4" />
             {geo.loading ? tc("loading") : t("useCurrentLocation")}
           </button>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              {t("serviceRadius")}
+            </label>
+            <input
+              type="number"
+              min="10"
+              max="10000"
+              step="10"
+              value={form.serviceRadiusMeters}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  serviceRadiusMeters: e.target.value,
+                }))
+              }
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {t("serviceRadiusHelp")}
+            </p>
+          </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">

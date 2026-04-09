@@ -1,0 +1,1 @@
+ALTER TABLE "sites" ADD COLUMN "service_radius_meters" integer DEFAULT 200 NOT NULL;
