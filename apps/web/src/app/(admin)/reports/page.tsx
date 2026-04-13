@@ -44,10 +44,13 @@ export default function ReportsPage() {
                 {t("reportTitle")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                {t("reportType")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 {t("customer")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                {t("workOrder")}
+                {t("scope")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 {t("period")}
@@ -63,13 +66,13 @@ export default function ReportsPage() {
           <tbody className="divide-y divide-gray-200">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                   {tc("loading")}
                 </td>
               </tr>
             ) : data?.items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                   {tc("noResults")}
                 </td>
               </tr>
@@ -80,10 +83,17 @@ export default function ReportsPage() {
                     {report.title}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
+                    {report.reportType === "site_progress"
+                      ? t("siteProgress")
+                      : t("workOrderSummary")}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
                     {report.customerName}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {report.workOrderTitle ?? "—"}
+                    {report.reportType === "site_progress"
+                      ? (report.siteName ?? "—")
+                      : (report.workOrderTitle ?? "—")}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {report.periodStart} — {report.periodEnd}

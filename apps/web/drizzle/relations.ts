@@ -40,6 +40,7 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
     references: [customers.id],
   }),
   workOrders: many(workOrders),
+  reports: many(reports),
 }));
 
 export const workOrdersRelations = relations(workOrders, ({ one, many }) => ({
@@ -125,6 +126,10 @@ export const reportsRelations = relations(reports, ({ one }) => ({
   workOrder: one(workOrders, {
     fields: [reports.workOrderId],
     references: [workOrders.id],
+  }),
+  site: one(sites, {
+    fields: [reports.siteId],
+    references: [sites.id],
   }),
   generatedByUser: one(users, {
     fields: [reports.generatedBy],
