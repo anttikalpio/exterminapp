@@ -336,9 +336,10 @@ export function SiteProgressPdf({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap>
-        {/* ── Header ── */}
-        <View style={styles.header} fixed>
+      <Page size="A4" style={styles.page}>
+        {/* ── Header (page 1 only — wrapped pages start at the page's top
+            padding, no fixed header so there is no risk of overlap) ── */}
+        <View style={styles.header}>
           <View>
             {logoUrl ? (
               <Image src={logoUrl} style={styles.logo} />
@@ -427,14 +428,22 @@ export function SiteProgressPdf({
           </View>
         )}
 
-        {/* ── Per Work Order Sections ── */}
+        {/* ── Per Work Order Sections ──
+            The outer View wraps (wrap defaults to true) so a large work
+            order can flow across multiple pages without overlapping
+            other content. We force a page break before each WO after the
+            first so each WO starts fresh. Individual sub-blocks use
+            wrap={false} or minPresenceAhead to prevent orphaned headers
+            and to keep small tables intact. Large tables (poison
+            activity) do NOT use wrap={false} — they must be allowed to
+            break across pages. */}
         {workOrders.map((wo, woIndex) => {
           const trend = buildConsumptionTrend(wo.poisonHistory);
 
           return (
-            <View key={woIndex} wrap={false} break={woIndex > 0}>
-              {/* WO header */}
-              <View style={styles.woHeader}>
+            <View key={woIndex} break={woIndex > 0}>
+              {/* WO header — keep the colored band + its meta together */}
+              <View style={styles.woHeader} wrap={false}>
                 <Text style={styles.woTitle}>
                   {l.workOrder}: {wo.title}
                   {wo.workOrderNumber ? ` (#${wo.workOrderNumber})` : ""}
@@ -449,99 +458,109 @@ export function SiteProgressPdf({
               </View>
 
               {/* Visits */}
-              <Text style={styles.subSectionTitle}>{l.visitLog}</Text>
-              {wo.visits.length === 0 ? (
-                <Text style={styles.empty}>{l.noVisits}</Text>
-              ) : (
-                <View style={styles.table}>
-                  <View style={styles.tableHeader}>
-                    <Text style={{ width: "30%" }}>{l.visitDate}</Text>
-                    <Text style={{ width: "35%" }}>{l.visitName}</Text>
-                    <Text style={{ width: "35%" }}>{l.performedBy}</Text>
-                  </View>
-                  {wo.visits.map((visit) => (
-                    <View key={visit.id} style={styles.tableRow}>
-                      <Text style={{ width: "30%" }}>
-                        {formatDate(visit.visitedAt)}
-                      </Text>
-                      <Text style={{ width: "35%" }}>{visit.name}</Text>
-                      <Text style={{ width: "35%" }}>
-                        {visit.createdByName}
-                      </Text>
+              <View wrap={false} minPresenceAhead={40}>
+                <Text style={styles.subSectionTitle}>{l.visitLog}</Text>
+                {wo.visits.length === 0 ? (
+                  <Text style={styles.empty}>{l.noVisits}</Text>
+                ) : (
+                  <View style={styles.table}>
+                    <View style={styles.tableHeader}>
+                      <Text style={{ width: "30%" }}>{l.visitDate}</Text>
+                      <Text style={{ width: "35%" }}>{l.visitName}</Text>
+                      <Text style={{ width: "35%" }}>{l.performedBy}</Text>
                     </View>
-                  ))}
-                </View>
-              )}
+                    {wo.visits.map((visit) => (
+                      <View key={visit.id} style={styles.tableRow}>
+                        <Text style={{ width: "30%" }}>
+                          {formatDate(visit.visitedAt)}
+                        </Text>
+                        <Text style={{ width: "35%" }}>{visit.name}</Text>
+                        <Text style={{ width: "35%" }}>
+                          {visit.createdByName}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
 
               {/* Traps */}
-              <Text style={styles.subSectionTitle}>{l.trapSummary}</Text>
-              {wo.traps.length === 0 ? (
-                <Text style={styles.empty}>{l.noTraps}</Text>
-              ) : (
-                <View style={styles.table}>
-                  <View style={styles.tableHeader}>
-                    <Text style={{ width: "30%" }}>{l.trap}</Text>
-                    <Text style={{ width: "40%" }}>{l.type}</Text>
-                    <Text style={{ width: "30%" }}>{l.status}</Text>
-                  </View>
-                  {wo.traps.map((trap) => (
-                    <View key={trap.id} style={styles.tableRow}>
-                      <Text style={{ width: "30%" }}>{trap.label}</Text>
-                      <Text style={{ width: "40%" }}>
-                        {trap.trapType.replace(/_/g, " ")}
-                      </Text>
-                      <Text style={{ width: "30%" }}>{trap.status}</Text>
+              <View wrap={false} minPresenceAhead={40}>
+                <Text style={styles.subSectionTitle}>{l.trapSummary}</Text>
+                {wo.traps.length === 0 ? (
+                  <Text style={styles.empty}>{l.noTraps}</Text>
+                ) : (
+                  <View style={styles.table}>
+                    <View style={styles.tableHeader}>
+                      <Text style={{ width: "30%" }}>{l.trap}</Text>
+                      <Text style={{ width: "40%" }}>{l.type}</Text>
+                      <Text style={{ width: "30%" }}>{l.status}</Text>
                     </View>
-                  ))}
-                </View>
-              )}
+                    {wo.traps.map((trap) => (
+                      <View key={trap.id} style={styles.tableRow}>
+                        <Text style={{ width: "30%" }}>{trap.label}</Text>
+                        <Text style={{ width: "40%" }}>
+                          {trap.trapType.replace(/_/g, " ")}
+                        </Text>
+                        <Text style={{ width: "30%" }}>{trap.status}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
 
-              {/* Poison Activity */}
-              <Text style={styles.subSectionTitle}>{l.poisonActivity}</Text>
-              {wo.poisonHistory.length === 0 ? (
-                <Text style={styles.empty}>{l.noPoisonActivity}</Text>
-              ) : (
-                <View style={styles.table}>
-                  <View style={styles.tableHeader}>
-                    <Text style={{ width: "14%" }}>{l.date}</Text>
-                    <Text style={{ width: "12%" }}>{l.trap}</Text>
-                    <Text style={{ width: "20%" }}>{l.poison}</Text>
-                    <Text style={{ width: "10%", textAlign: "right" }}>
-                      {l.remaining}
-                    </Text>
-                    <Text style={{ width: "10%", textAlign: "right" }}>
-                      {l.added}
-                    </Text>
-                    <Text style={{ width: "18%" }}>{l.technician}</Text>
-                    <Text style={{ width: "16%" }}>{l.notes}</Text>
-                  </View>
-                  {wo.poisonHistory.map((entry) => (
-                    <View key={entry.id} style={styles.tableRow}>
-                      <Text style={{ width: "14%" }}>
-                        {formatDate(entry.performedAt)}
-                      </Text>
-                      <Text style={{ width: "12%" }}>{entry.trapLabel}</Text>
-                      <Text style={{ width: "20%" }}>{entry.poisonType}</Text>
+              {/* Poison Activity — can be very long; allow wrapping but
+                  keep the section title together with the table header
+                  and at least a couple of rows via minPresenceAhead. */}
+              <View minPresenceAhead={80}>
+                <Text style={styles.subSectionTitle}>{l.poisonActivity}</Text>
+                {wo.poisonHistory.length === 0 ? (
+                  <Text style={styles.empty}>{l.noPoisonActivity}</Text>
+                ) : (
+                  <View style={styles.table}>
+                    <View style={styles.tableHeader} fixed>
+                      <Text style={{ width: "14%" }}>{l.date}</Text>
+                      <Text style={{ width: "12%" }}>{l.trap}</Text>
+                      <Text style={{ width: "20%" }}>{l.poison}</Text>
                       <Text style={{ width: "10%", textAlign: "right" }}>
-                        {entry.remainingGrams ?? "—"}
+                        {l.remaining}
                       </Text>
                       <Text style={{ width: "10%", textAlign: "right" }}>
-                        {entry.quantityGrams}
+                        {l.added}
                       </Text>
-                      <Text style={{ width: "18%" }}>
-                        {entry.performedByName}
-                      </Text>
-                      <Text style={{ width: "16%" }}>
-                        {entry.notes || ""}
-                      </Text>
+                      <Text style={{ width: "18%" }}>{l.technician}</Text>
+                      <Text style={{ width: "16%" }}>{l.notes}</Text>
                     </View>
-                  ))}
-                </View>
-              )}
+                    {wo.poisonHistory.map((entry) => (
+                      <View key={entry.id} style={styles.tableRow} wrap={false}>
+                        <Text style={{ width: "14%" }}>
+                          {formatDate(entry.performedAt)}
+                        </Text>
+                        <Text style={{ width: "12%" }}>{entry.trapLabel}</Text>
+                        <Text style={{ width: "20%" }}>
+                          {entry.poisonType}
+                        </Text>
+                        <Text style={{ width: "10%", textAlign: "right" }}>
+                          {entry.remainingGrams ?? "—"}
+                        </Text>
+                        <Text style={{ width: "10%", textAlign: "right" }}>
+                          {entry.quantityGrams}
+                        </Text>
+                        <Text style={{ width: "18%" }}>
+                          {entry.performedByName}
+                        </Text>
+                        <Text style={{ width: "16%" }}>
+                          {entry.notes || ""}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
 
               {/* Consumption Trend */}
               {trend.length > 0 && (
-                <>
+                <View wrap={false} minPresenceAhead={40}>
                   <Text style={styles.subSectionTitle}>
                     {l.consumptionTrend}
                   </Text>
@@ -567,7 +586,7 @@ export function SiteProgressPdf({
                       </View>
                     ))}
                   </View>
-                </>
+                </View>
               )}
             </View>
           );
