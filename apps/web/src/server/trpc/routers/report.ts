@@ -4,6 +4,8 @@ import { router, adminProcedure } from "../trpc";
 import {
   reports,
   workOrders,
+  workOrderAssignments,
+  visits,
   sites,
   customers,
   traps,
@@ -37,11 +39,14 @@ export const reportRouter = router({
             customerName: customers.businessName,
             workOrderId: reports.workOrderId,
             workOrderTitle: workOrders.title,
+            siteId: reports.siteId,
+            siteName: sites.name,
             createdAt: reports.createdAt,
           })
           .from(reports)
           .innerJoin(customers, eq(reports.customerId, customers.id))
           .leftJoin(workOrders, eq(reports.workOrderId, workOrders.id))
+          .leftJoin(sites, eq(reports.siteId, sites.id))
           .where(eq(reports.tenantId, ctx.tenantId))
           .orderBy(desc(reports.createdAt))
           .limit(pageSize)
@@ -58,6 +63,18 @@ export const reportRouter = router({
   getById: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      // For work_order_summary: site info comes via workOrders.siteId.
+      // For site_progress: site info comes directly from reports.siteId.
+      // We left-join sites on both and coalesce.
+      const siteFromReport = ctx.db
+        .select({
+          id: sites.id,
+          name: sites.name,
+          address: sites.address,
+        })
+        .from(sites)
+        .as("site_report");
+
       const [report] = await ctx.db
         .select({
           id: reports.id,
@@ -75,15 +92,16 @@ export const reportRouter = router({
           workOrderId: reports.workOrderId,
           workOrderTitle: workOrders.title,
           workOrderNumber: workOrders.workOrderNumber,
-          siteId: workOrders.siteId,
-          siteName: sites.name,
-          siteAddress: sites.address,
+          siteId: sql<string | null>`coalesce(${reports.siteId}, ${workOrders.siteId})`,
+          siteName: sql<string | null>`coalesce(${siteFromReport.name}, ${sites.name})`,
+          siteAddress: sql<string | null>`coalesce(${siteFromReport.address}, ${sites.address})`,
           createdAt: reports.createdAt,
         })
         .from(reports)
         .innerJoin(customers, eq(reports.customerId, customers.id))
         .leftJoin(workOrders, eq(reports.workOrderId, workOrders.id))
         .leftJoin(sites, eq(workOrders.siteId, sites.id))
+        .leftJoin(siteFromReport, eq(reports.siteId, siteFromReport.id))
         .where(
           and(eq(reports.id, input.id), eq(reports.tenantId, ctx.tenantId))
         )
@@ -231,6 +249,7 @@ export const reportRouter = router({
       z.object({
         customerId: z.string().uuid(),
         workOrderId: z.string().uuid().optional(),
+        siteId: z.string().uuid().optional(),
         reportType: z.string().min(1).max(50).default("work_order_summary"),
         title: z.string().min(1).max(255),
         periodStart: z.string(),
@@ -258,12 +277,31 @@ export const reportRouter = router({
         }
       }
 
+      // If a site is specified, verify it belongs to the customer.
+      if (input.siteId) {
+        const [s] = await ctx.db
+          .select({ customerId: sites.customerId })
+          .from(sites)
+          .where(
+            and(
+              eq(sites.id, input.siteId),
+              eq(sites.tenantId, ctx.tenantId)
+            )
+          )
+          .limit(1);
+
+        if (!s || s.customerId !== input.customerId) {
+          throw new Error("Site does not belong to the selected customer");
+        }
+      }
+
       const [report] = await ctx.db
         .insert(reports)
         .values({
           tenantId: ctx.tenantId,
           customerId: input.customerId,
           workOrderId: input.workOrderId ?? null,
+          siteId: input.siteId ?? null,
           reportType: input.reportType,
           generatedBy: ctx.user.id,
           title: input.title,
@@ -331,6 +369,243 @@ export const reportRouter = router({
       )
       .orderBy(customers.businessName);
   }),
+
+  // Sites for a given customer (used by site_progress report flow)
+  siteOptions: adminProcedure
+    .input(z.object({ customerId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db
+        .select({
+          id: sites.id,
+          name: sites.name,
+          address: sites.address,
+        })
+        .from(sites)
+        .where(
+          and(
+            eq(sites.tenantId, ctx.tenantId),
+            eq(sites.customerId, input.customerId),
+            eq(sites.isActive, true)
+          )
+        )
+        .orderBy(sites.name);
+    }),
+
+  // Gather data for a site-progress report: site info, all active work
+  // orders at the site, their visits, traps, and poison history.
+  getSiteProgressReportData: adminProcedure
+    .input(
+      z.object({
+        siteId: z.string().uuid(),
+        periodStart: z.string(),
+        periodEnd: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { siteId, periodStart, periodEnd } = input;
+
+      // Site + customer info
+      const [siteInfo] = await ctx.db
+        .select({
+          id: sites.id,
+          name: sites.name,
+          address: sites.address,
+          latitude: sites.latitude,
+          longitude: sites.longitude,
+          customerId: sites.customerId,
+          customerName: customers.businessName,
+          customerContact: customers.contactName,
+          customerPhone: customers.contactPhone,
+          customerEmail: customers.contactEmail,
+          customerLanguage: customers.preferredLanguage,
+        })
+        .from(sites)
+        .innerJoin(customers, eq(sites.customerId, customers.id))
+        .where(
+          and(eq(sites.id, siteId), eq(sites.tenantId, ctx.tenantId))
+        )
+        .limit(1);
+
+      if (!siteInfo) return null;
+
+      // All active work orders at this site
+      const siteWorkOrders = await ctx.db
+        .select({
+          id: workOrders.id,
+          title: workOrders.title,
+          workOrderNumber: workOrders.workOrderNumber,
+          status: workOrders.status,
+          startDate: workOrders.startDate,
+          endDate: workOrders.endDate,
+        })
+        .from(workOrders)
+        .where(
+          and(
+            eq(workOrders.siteId, siteId),
+            eq(workOrders.tenantId, ctx.tenantId),
+            eq(workOrders.isActive, true)
+          )
+        )
+        .orderBy(workOrders.createdAt);
+
+      if (siteWorkOrders.length === 0) {
+        return {
+          site: siteInfo,
+          earliestStartDate: null,
+          workOrders: [],
+        };
+      }
+
+      const woIds = siteWorkOrders.map((wo) => wo.id);
+
+      // Batch queries for all work orders at once
+      const [allAssignments, allVisits, allTraps] = await Promise.all([
+        // Assignments
+        ctx.db
+          .select({
+            workOrderId: workOrderAssignments.workOrderId,
+            firstName: users.firstName,
+            lastName: users.lastName,
+          })
+          .from(workOrderAssignments)
+          .innerJoin(users, eq(workOrderAssignments.userId, users.id))
+          .where(inArray(workOrderAssignments.workOrderId, woIds)),
+
+        // Visits within the period
+        ctx.db
+          .select({
+            id: visits.id,
+            workOrderId: visits.workOrderId,
+            name: visits.name,
+            visitedAt: visits.visitedAt,
+            createdByName:
+              sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+          })
+          .from(visits)
+          .innerJoin(users, eq(visits.createdBy, users.id))
+          .where(
+            and(
+              eq(visits.tenantId, ctx.tenantId),
+              inArray(visits.workOrderId, woIds),
+              gte(visits.visitedAt, new Date(periodStart)),
+              lte(visits.visitedAt, new Date(periodEnd + "T23:59:59.999Z"))
+            )
+          )
+          .orderBy(visits.visitedAt),
+
+        // Traps (all, regardless of period)
+        ctx.db
+          .select({
+            id: traps.id,
+            workOrderId: traps.workOrderId,
+            label: traps.label,
+            latitude: traps.latitude,
+            longitude: traps.longitude,
+            trapType: traps.trapType,
+            status: traps.status,
+          })
+          .from(traps)
+          .where(
+            and(
+              eq(traps.tenantId, ctx.tenantId),
+              inArray(traps.workOrderId, woIds)
+            )
+          )
+          .orderBy(traps.label),
+      ]);
+
+      // Poison additions (need trap IDs first)
+      const allTrapIds = allTraps.map((t) => t.id);
+      let allPoisonHistory: Array<{
+        id: string;
+        trapId: string;
+        trapLabel: string;
+        poisonType: string;
+        remainingGrams: string | null;
+        quantityGrams: string;
+        notes: string | null;
+        performedAt: Date;
+        performedByName: string;
+      }> = [];
+
+      if (allTrapIds.length > 0) {
+        allPoisonHistory = await ctx.db
+          .select({
+            id: poisonAdditions.id,
+            trapId: poisonAdditions.trapId,
+            trapLabel: traps.label,
+            poisonType: poisonAdditions.poisonType,
+            remainingGrams: poisonAdditions.remainingGrams,
+            quantityGrams: poisonAdditions.quantityGrams,
+            notes: poisonAdditions.notes,
+            performedAt: poisonAdditions.performedAt,
+            performedByName:
+              sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+          })
+          .from(poisonAdditions)
+          .innerJoin(traps, eq(poisonAdditions.trapId, traps.id))
+          .innerJoin(users, eq(poisonAdditions.performedBy, users.id))
+          .where(
+            and(
+              eq(poisonAdditions.tenantId, ctx.tenantId),
+              inArray(poisonAdditions.trapId, allTrapIds),
+              gte(poisonAdditions.performedAt, new Date(periodStart)),
+              lte(
+                poisonAdditions.performedAt,
+                new Date(periodEnd + "T23:59:59.999Z")
+              )
+            )
+          )
+          .orderBy(traps.label, poisonAdditions.performedAt);
+      }
+
+      // Group data by work order
+      const trapsByWo = new Map<string, typeof allTraps>();
+      for (const t of allTraps) {
+        const arr = trapsByWo.get(t.workOrderId) ?? [];
+        arr.push(t);
+        trapsByWo.set(t.workOrderId, arr);
+      }
+
+      const trapIdToWo = new Map<string, string>();
+      for (const t of allTraps) {
+        trapIdToWo.set(t.id, t.workOrderId);
+      }
+
+      const enrichedWorkOrders = siteWorkOrders.map((wo) => ({
+        ...wo,
+        assignedTechnicians: allAssignments
+          .filter((a) => a.workOrderId === wo.id)
+          .map((a) => ({ firstName: a.firstName, lastName: a.lastName })),
+        visits: allVisits.filter((v) => v.workOrderId === wo.id),
+        traps: (trapsByWo.get(wo.id) ?? []).map((t) => ({
+          id: t.id,
+          label: t.label,
+          latitude: t.latitude,
+          longitude: t.longitude,
+          trapType: t.trapType,
+          status: t.status,
+        })),
+        poisonHistory: allPoisonHistory.filter(
+          (p) => trapIdToWo.get(p.trapId) === wo.id
+        ),
+      }));
+
+      // Earliest start date across all work orders for "from beginning"
+      const startDates = siteWorkOrders
+        .map((wo) => wo.startDate)
+        .filter((d): d is string => d !== null);
+      const earliestStartDate =
+        startDates.length > 0
+          ? startDates.sort()[0]
+          : null;
+
+      return {
+        site: siteInfo,
+        earliestStartDate,
+        workOrders: enrichedWorkOrders,
+      };
+    }),
 
   // Work orders for a given customer
   workOrderOptions: adminProcedure

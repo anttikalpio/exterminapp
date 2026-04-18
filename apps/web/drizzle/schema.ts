@@ -25,7 +25,7 @@ export const tenants = pgTable("tenants", {
   vatNumber: varchar("vat_number", { length: 50 }),
   contactEmail: varchar("contact_email", { length: 255 }),
   contactPhone: varchar("contact_phone", { length: 30 }),
-  logoPath: varchar("logo_path", { length: 500 }),
+  logoPath: text("logo_path"),
   settings: jsonb("settings").default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -295,10 +295,9 @@ export const poisonAdditions = pgTable(
 
 // ============================================================
 // REPORTS
-// Reports are customer-scoped. Most reports focus on a single work
-// order (report_type = 'work_order_summary', work_order_id set), but
-// future report types aggregate across all of a customer's data
-// (work_order_id left null).
+// Reports are customer-scoped. Work-order-summary reports set
+// work_order_id; site-progress reports set site_id and aggregate
+// across all active work orders at that site.
 // ============================================================
 export const reports = pgTable(
   "reports",
@@ -311,6 +310,7 @@ export const reports = pgTable(
       .notNull()
       .references(() => customers.id),
     workOrderId: uuid("work_order_id").references(() => workOrders.id),
+    siteId: uuid("site_id").references(() => sites.id),
     reportType: varchar("report_type", { length: 50 })
       .notNull()
       .default("work_order_summary"),
@@ -329,5 +329,6 @@ export const reports = pgTable(
     index("reports_tenant_idx").on(table.tenantId),
     index("reports_customer_idx").on(table.customerId),
     index("reports_work_order_idx").on(table.workOrderId),
+    index("reports_site_idx").on(table.siteId),
   ]
 );

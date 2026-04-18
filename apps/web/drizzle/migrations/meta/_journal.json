@@ -64,6 +64,20 @@
       "when": 1775764453845,
       "tag": "0008_unusual_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776122046305,
+      "tag": "0009_melted_wolf_cub",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776492125049,
+      "tag": "0010_tense_spot",
+      "breakpoints": true
     }
   ]
 }

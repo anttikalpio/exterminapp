@@ -1,6 +1,6 @@
 {
   "name": "@exterminapp/web",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,7 +9,8 @@
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx drizzle/seed.ts"
+    "db:seed": "tsx drizzle/seed.ts",
+    "db:seed-demo": "tsx drizzle/seed-demo.ts"
   },
   "dependencies": {
     "@exterminapp/shared": "*",
