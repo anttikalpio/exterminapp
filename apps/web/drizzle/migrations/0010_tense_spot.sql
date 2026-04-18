@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ALTER COLUMN "logo_path" SET DATA TYPE text;
