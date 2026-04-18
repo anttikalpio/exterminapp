@@ -111,11 +111,18 @@ export default function NewReportPage() {
   const selectedWorkOrder = workOrderOptions?.find((w) => w.id === workOrderId);
   const selectedSite = siteOptions?.find((s) => s.id === siteId);
 
-  // Keep periodStart in sync with "from beginning" checkbox
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Keep periodStart/periodEnd in sync with "from beginning" checkbox
   const handleFromBeginningToggle = (checked: boolean) => {
     setFromBeginning(checked);
-    if (checked && siteEarliestData?.earliestStartDate) {
-      setPeriodStart(siteEarliestData.earliestStartDate);
+    if (checked) {
+      if (reportType === "site_progress" && siteEarliestData?.earliestStartDate) {
+        setPeriodStart(siteEarliestData.earliestStartDate);
+      } else if (reportType === "work_order_summary" && selectedWorkOrder?.startDate) {
+        setPeriodStart(selectedWorkOrder.startDate);
+      }
+      setPeriodEnd(today);
     }
   };
 
@@ -410,27 +417,31 @@ export default function NewReportPage() {
             {t("step2")}
           </h2>
 
-          {reportType === "site_progress" && (
-            <div className="mb-4 rounded-md bg-gray-50 p-3">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={fromBeginning}
-                  onChange={(e) => handleFromBeginningToggle(e.target.checked)}
-                  disabled={!siteEarliestData?.earliestStartDate}
-                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  {t("fromBeginning")}
-                </span>
-              </label>
-              <p className="mt-1 ml-6 text-xs text-gray-500">
-                {t("fromBeginningHelp")}
-                {siteEarliestData?.earliestStartDate &&
-                  ` (${siteEarliestData.earliestStartDate})`}
-              </p>
-            </div>
-          )}
+          <div className="mb-4 rounded-md bg-gray-50 p-3">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={fromBeginning}
+                onChange={(e) => handleFromBeginningToggle(e.target.checked)}
+                disabled={
+                  reportType === "site_progress"
+                    ? !siteEarliestData?.earliestStartDate
+                    : !selectedWorkOrder?.startDate
+                }
+                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                {t("fromBeginning")}
+              </span>
+            </label>
+            <p className="mt-1 ml-6 text-xs text-gray-500">
+              {t("fromBeginningHelp")}
+              {reportType === "site_progress" && siteEarliestData?.earliestStartDate &&
+                ` (${siteEarliestData.earliestStartDate})`}
+              {reportType === "work_order_summary" && selectedWorkOrder?.startDate &&
+                ` (${selectedWorkOrder.startDate})`}
+            </p>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -622,66 +633,126 @@ export default function NewReportPage() {
                   <p className="text-sm text-gray-500">
                     {t("noPoisonActivity")}
                   </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-medium text-gray-500">
-                            {t("date")}
-                          </th>
-                          <th className="px-4 py-2 text-left font-medium text-gray-500">
-                            {t("trapLabel")}
-                          </th>
-                          <th className="px-4 py-2 text-left font-medium text-gray-500">
-                            {t("poisonType")}
-                          </th>
-                          <th className="px-4 py-2 text-right font-medium text-gray-500">
-                            {t("remaining")}
-                          </th>
-                          <th className="px-4 py-2 text-right font-medium text-gray-500">
-                            {t("added")}
-                          </th>
-                          <th className="px-4 py-2 text-left font-medium text-gray-500">
-                            {t("technician")}
-                          </th>
-                          <th className="px-4 py-2 text-left font-medium text-gray-500">
-                            {t("notes")}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {woReportData.poisonHistory.map((entry) => (
-                          <tr key={entry.id}>
-                            <td className="whitespace-nowrap px-4 py-2 text-gray-600">
-                              {new Date(
-                                entry.performedAt
-                              ).toLocaleDateString()}
-                            </td>
-                            <td className="px-4 py-2 font-medium text-gray-900">
-                              {entry.trapLabel}
-                            </td>
-                            <td className="px-4 py-2 text-gray-600">
-                              {entry.poisonType}
-                            </td>
-                            <td className="px-4 py-2 text-right text-gray-600">
-                              {entry.remainingGrams ?? "—"}
-                            </td>
-                            <td className="px-4 py-2 text-right text-gray-600">
-                              {entry.quantityGrams}
-                            </td>
-                            <td className="px-4 py-2 text-gray-600">
-                              {entry.performedByName}
-                            </td>
-                            <td className="px-4 py-2 text-gray-500">
-                              {entry.notes || "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                ) : (() => {
+                  const byDate = woReportData.poisonHistory.reduce<Record<string, number>>(
+                    (acc, e) => {
+                      const d = new Date(e.performedAt).toLocaleDateString();
+                      acc[d] = (acc[d] ?? 0) + parseFloat(e.quantityGrams);
+                      return acc;
+                    },
+                    {}
+                  );
+                  const chartEntries = Object.entries(byDate).sort(
+                    ([a], [b]) => new Date(a).getTime() - new Date(b).getTime()
+                  );
+                  const total = chartEntries.reduce((s, [, v]) => s + v, 0);
+                  const maxVal = Math.max(...chartEntries.map(([, v]) => v), 1);
+                  const svgH = 160;
+                  const svgW = 540;
+                  const padL = 48;
+                  const padB = 44;
+                  const plotW = svgW - padL - 8;
+                  const plotH = svgH - padB;
+                  const n = chartEntries.length;
+                  const barW = Math.min(36, plotW / n - 6);
+                  const yTicks = [0, 0.25, 0.5, 0.75, 1];
+                  return (
+                    <div>
+                      <svg
+                        viewBox={`0 0 ${svgW} ${svgH}`}
+                        className="w-full"
+                        aria-label={t("poisonActivity")}
+                      >
+                        {/* Grid lines + y-axis labels */}
+                        {yTicks.map((f) => {
+                          const y = plotH - f * plotH;
+                          return (
+                            <g key={f}>
+                              <line
+                                x1={padL}
+                                y1={y}
+                                x2={svgW - 8}
+                                y2={y}
+                                stroke="#e5e7eb"
+                                strokeWidth="1"
+                              />
+                              <text
+                                x={padL - 4}
+                                y={y + 4}
+                                textAnchor="end"
+                                fontSize="9"
+                                fill="#9ca3af"
+                              >
+                                {(f * maxVal).toFixed(0)}g
+                              </text>
+                            </g>
+                          );
+                        })}
+                        {/* Bars */}
+                        {chartEntries.map(([date, val], i) => {
+                          const barH = (val / maxVal) * plotH;
+                          const cx = padL + (i + 0.5) * (plotW / n);
+                          const x = cx - barW / 2;
+                          const y = plotH - barH;
+                          return (
+                            <g key={date}>
+                              <rect
+                                x={x}
+                                y={y}
+                                width={barW}
+                                height={barH}
+                                rx="3"
+                                fill="#16a34a"
+                                opacity="0.85"
+                              />
+                              <text
+                                x={cx}
+                                y={y - 4}
+                                textAnchor="middle"
+                                fontSize="9"
+                                fill="#374151"
+                              >
+                                {val.toFixed(0)}g
+                              </text>
+                              <text
+                                x={cx}
+                                y={plotH + 12}
+                                textAnchor="middle"
+                                fontSize="8"
+                                fill="#6b7280"
+                                transform={`rotate(-30,${cx},${plotH + 12})`}
+                              >
+                                {date}
+                              </text>
+                            </g>
+                          );
+                        })}
+                        {/* Axes */}
+                        <line
+                          x1={padL}
+                          y1={0}
+                          x2={padL}
+                          y2={plotH}
+                          stroke="#d1d5db"
+                          strokeWidth="1"
+                        />
+                        <line
+                          x1={padL}
+                          y1={plotH}
+                          x2={svgW - 8}
+                          y2={plotH}
+                          stroke="#d1d5db"
+                          strokeWidth="1"
+                        />
+                      </svg>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {t("totalAdded")}: <strong>{total.toFixed(1)} g</strong>
+                        {" · "}
+                        {chartEntries.length} {t("visitLog").toLowerCase()}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             </>
           )}

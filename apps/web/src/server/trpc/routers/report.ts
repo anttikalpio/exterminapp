@@ -618,6 +618,7 @@ export const reportRouter = router({
           workOrderNumber: workOrders.workOrderNumber,
           status: workOrders.status,
           siteName: sites.name,
+          startDate: workOrders.startDate,
         })
         .from(workOrders)
         .innerJoin(sites, eq(workOrders.siteId, sites.id))
