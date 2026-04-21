@@ -837,18 +837,78 @@ export default function NewReportPage() {
                       <p className="text-sm text-gray-500">
                         {t("noPoisonActivity")}
                       </p>
-                    ) : (
-                      <p className="text-sm text-gray-600">
-                        {t("totalAdded")}:{" "}
-                        {wo.poisonHistory
-                          .reduce(
-                            (sum, p) => sum + parseFloat(p.quantityGrams),
-                            0
-                          )
-                          .toFixed(1)}{" "}
-                        g
-                      </p>
-                    )}
+                    ) : (() => {
+                      const byDate = wo.poisonHistory.reduce<Record<string, number>>(
+                        (acc, e) => {
+                          const d = new Date(e.performedAt).toLocaleDateString();
+                          acc[d] = (acc[d] ?? 0) + parseFloat(e.quantityGrams);
+                          return acc;
+                        },
+                        {}
+                      );
+                      const visitDates = wo.visits.map((v) =>
+                        new Date(v.visitedAt).toLocaleDateString()
+                      );
+                      const chartEntries = (
+                        visitDates.length > 0
+                          ? visitDates
+                          : Object.keys(byDate)
+                      )
+                        .filter((d, i, arr) => arr.indexOf(d) === i)
+                        .map((d) => [d, byDate[d] ?? 0] as [string, number]);
+                      const total = Object.values(byDate).reduce((s, v) => s + v, 0);
+                      const maxVal = Math.max(...chartEntries.map(([, v]) => v), 1);
+                      const svgH = 140;
+                      const svgW = 480;
+                      const padL = 44;
+                      const padB = 40;
+                      const plotW = svgW - padL - 8;
+                      const plotH = svgH - padB;
+                      const n = chartEntries.length;
+                      const barW = Math.min(32, plotW / n - 6);
+                      const yTicks = [0, 0.5, 1];
+                      return (
+                        <div>
+                          <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full">
+                            {yTicks.map((f) => {
+                              const y = plotH - f * plotH;
+                              return (
+                                <g key={f}>
+                                  <line x1={padL} y1={y} x2={svgW - 8} y2={y} stroke="#e5e7eb" strokeWidth="1" />
+                                  <text x={padL - 4} y={y + 4} textAnchor="end" fontSize="9" fill="#9ca3af">
+                                    {(f * maxVal).toFixed(0)}g
+                                  </text>
+                                </g>
+                              );
+                            })}
+                            {chartEntries.map(([date, val], i) => {
+                              const barH = (val / maxVal) * plotH;
+                              const cx = padL + (i + 0.5) * (plotW / n);
+                              const x = cx - barW / 2;
+                              const y = plotH - barH;
+                              return (
+                                <g key={date}>
+                                  <rect x={x} y={y} width={barW} height={barH} rx="2" fill={val > 0 ? "#16a34a" : "#e5e7eb"} opacity="0.85" />
+                                  {val > 0 && (
+                                    <text x={cx} y={y - 3} textAnchor="middle" fontSize="8" fill="#374151">
+                                      {val.toFixed(0)}g
+                                    </text>
+                                  )}
+                                  <text x={cx} y={plotH + 10} textAnchor="middle" fontSize="7" fill="#6b7280" transform={`rotate(-30,${cx},${plotH + 10})`}>
+                                    {date}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                            <line x1={padL} y1={0} x2={padL} y2={plotH} stroke="#d1d5db" strokeWidth="1" />
+                            <line x1={padL} y1={plotH} x2={svgW - 8} y2={plotH} stroke="#d1d5db" strokeWidth="1" />
+                          </svg>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {t("totalAdded")}: <strong>{total.toFixed(1)} g</strong>
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))
               )}
